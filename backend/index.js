@@ -4,6 +4,8 @@ const logger = require('./src/middleware/loggerMiddleware');
 const productRoutes = require('./src/routes/productRoutes');
 const orderRoutes = require('./src/routes/orderRoutes');
 const cartRoutes = require('./src/routes/cartRoutes');
+const userRoutes = require('./src/routes/userRoutes');
+const aiChatRoutes = require('./src/routes/aiChatRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -16,6 +18,8 @@ app.use(logger);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/ai-chat', aiChatRoutes);
 
 
 // 1. API Test kết nối
