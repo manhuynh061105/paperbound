@@ -30,4 +30,18 @@ const deleteItem = async (req, res) => {
   }
 };
 
-module.exports = { getCart, addItem, deleteItem };
+const updateQuantity = async (req, res) => {
+  try {
+    const { userId, productId, quantity } = req.body;
+    if (quantity < 1) {
+      return res.status(400).json({ success: false, message: "Số lượng không thể nhỏ hơn 1" });
+    }
+    const updated = await Cart.updateQuantity(userId, productId, quantity);
+    res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Nhớ export thêm updateQuantity ở cuối file nhé!
+module.exports = { getCart, addItem, deleteItem, updateQuantity };

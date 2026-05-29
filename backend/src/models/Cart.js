@@ -27,6 +27,17 @@ const Cart = {
     return result.rows[0];
   },
 
+  updateQuantity: async (userId, productId, quantity) => {
+    const query = `
+      UPDATE carts 
+      SET quantity = $3 
+      WHERE user_id = $1 AND product_id = $2
+      RETURNING *
+    `;
+    const result = await pool.query(query, [userId, productId, quantity]);
+    return result.rows[0];
+  }, // <--- CHÍNH LÀ DẤU PHẨY NÀY! Bạn đang bị thiếu ở đây
+
   // Xóa 1 sản phẩm khỏi giỏ
   removeItem: async (userId, productId) => {
     await pool.query('DELETE FROM carts WHERE user_id = $1 AND product_id = $2', [userId, productId]);
