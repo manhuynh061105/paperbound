@@ -15,12 +15,12 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
+import ProductDetailPage from './pages/ProductDetailPage';
 
 // Import Services
 import { cartService, productService } from './services/api';
 
 function App() {
-  // 1. Quản lý trạng thái đăng nhập từ localStorage (Mặc định null nếu chưa có)
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
@@ -29,15 +29,11 @@ function App() {
   const [cartCount, setCartCount] = useState(0); 
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  
-  // State bổ sung để ép kích hoạt reload lại danh sách sách ở HomePage sau khi thêm mới
   const [productTrigger, setProductTrigger] = useState(0);
 
-  // Lấy ra ID và Quyền (Role) hiện tại dựa trên Session User
   const userId = currentUser ? currentUser.id : null;
   const userRole = currentUser ? currentUser.role : 'customer';
 
-  // 2. Hàm tính tổng số lượng sản phẩm trong giỏ từ Database
   const refreshCartCount = () => {
     if (!userId) {
       setCartCount(0);
@@ -52,17 +48,14 @@ function App() {
       .catch(err => console.error("Lỗi đồng bộ số lượng giỏ hàng:", err));
   };
 
-  // Tự động chạy đồng bộ giỏ hàng khi khởi chạy ứng dụng hoặc khi User thay đổi
   useEffect(() => {
     refreshCartCount();
   }, [userId]);
 
-  // Hàm xử lý đăng nhập thành công
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
   };
 
-  // Hàm xử lý đăng xuất
   const handleLogout = () => {
     localStorage.removeItem('user');
     setCurrentUser(null);
@@ -70,21 +63,12 @@ function App() {
     toast.info("ℹ️ Đã đăng xuất khỏi hệ thống.");
   };
 
-  // =========================================================
-  // FIX LỖI: HÀM GỌI API THẬT ĐỂ LƯU SÁCH MỚI VÀO POSTGRES
-  // =========================================================
   const handleAddNewProduct = async (newProduct) => {
     try {
-      // Gọi service để POST dữ liệu JSON và Base64 ảnh bìa lên Backend
       const response = await productService.create(newProduct);
-      
       if (response.data.success) {
         toast.success(`🎉 Thêm thành công cuốn sách: "${newProduct.title}" vào Database!`);
-        
-        // Tăng trigger lên 1 đơn vị để báo hiệu cho HomePage tự động nạp lại danh sách mới
         setProductTrigger(prev => prev + 1);
-        
-        // Đóng modal thêm sách
         setIsAdminModalOpen(false);
       }
     } catch (error) {
@@ -94,10 +78,36 @@ function App() {
     }
   };
 
+  // ====================================================================
+  // 💡 ĐÃ SỬA CHUẨN: Đồng bộ key camelCase (userId, productId) theo đúng Backend Controller
+  // ====================================================================
+  const handleAddToCart = async (product, quantity) => {
+    if (!userId) {
+      toast.warning("⚠️ Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      return;
+    }
+
+    try {
+      const payload = {
+        userId: Number(userId),         // Sửa từ user_id thành userId
+        productId: Number(product.id),  // Sửa từ product_id thành productId
+        quantity: Number(quantity)
+      };
+
+      const response = await cartService.add(payload);
+      if (response.data.success || response.data) {
+        // Gọi làm mới số lượng giỏ hàng lập tức
+        refreshCartCount();
+      }
+    } catch (error) {
+      console.error("Lỗi khi thêm vào giỏ hàng:", error);
+      toast.error("❌ Không thể thêm sản phẩm vào giỏ hàng!");
+    }
+  };
+
   return (
     <Router>
       <div style={styles.appWrapper}>
-        {/* Header nhận userRole động dựa trên tài khoản đăng nhập */}
         <Header 
           cartCount={cartCount} 
           userRole={userRole} 
@@ -109,12 +119,23 @@ function App() {
 
         <main style={styles.mainContent}>
           <Routes>
-            {/* Truyền thêm productTrigger vào HomePage để nó tự F5 ngầm danh sách sách */}
             <Route path="/" element={<HomePage refreshCartCount={refreshCartCount} productTrigger={productTrigger} />} />
             <Route path="/cart" element={<CartPage refreshCartCount={refreshCartCount} />} />
             <Route path="/checkout" element={<CheckoutPage refreshCartCount={refreshCartCount} />} />
             <Route path="/auth" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
             <Route path="/profile" element={<ProfilePage />} />
+            
+            {/* 💡 ĐÃ SỬA CHUẨN: Bổ sung prop refreshCartCount để trang chi tiết thực thi đồng bộ số lượng lên Header */}
+            <Route 
+              path="/products/:id" 
+              element={
+                <ProductDetailPage 
+                  onAddToCart={handleAddToCart} 
+                  refreshCartCount={refreshCartCount} 
+                  currentUser={currentUser} 
+                />
+              } 
+            />
           </Routes>
         </main>
 
@@ -130,7 +151,6 @@ function App() {
 
         <Footer />
 
-        {/* Cấu hình ToastContainer toàn cục để nhận lệnh bắn thông báo nhanh */}
         <ToastContainer 
           position="top-right" 
           autoClose={2000} 

@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
+const pool = require('../config/db');
 
-// 1. LẤY TOÀN BỘ DANH SÁCH SẢN PHẨM
+// 1. LẤY TOÀN BỘ DANH SÁCH SẢN PHẨM (ĐÃ BAO GỒM ĐA DANH MỤC)
 const getAllProducts = async (req, res) => {
   try {
     const data = await Product.findAll();
@@ -23,44 +24,47 @@ const getProductById = async (req, res) => {
   }
 };
 
-// 3. BỔ SUNG: HÀM TIẾP NHẬN YÊU CẦU THÊM SÁCH MỚI TỪ ADMIN
+// 3. TIẾP NHẬN YÊU CẦU THÊM SÁCH MỚI TỪ ADMIN (HỖ TRỢ MẢNG DANH MỤC)
 const createProduct = async (req, res) => {
   try {
-    // Đón nhận toàn bộ dữ liệu, bao gồm cả các trường nâng cấp từ Frontend gửi lên
+    // Đón nhận dữ liệu, chuyển từ trường đơn category_id sang mảng category_ids
     const { 
       title, 
       price, 
       tax_rate, 
       stock_quantity, 
-      category_id, 
+      category_ids, // <--- Nhận mảng ID danh mục từ Modal mới gửi lên
       cover_image,
       author,
       description,
       rating
     } = req.body;
 
-    // Kiểm tra nhanh điều kiện bắt buộc cơ bản
-    if (!title || !price) {
+    // Kiểm tra điều kiện bắt buộc cơ bản
+    if (!title || price === undefined || price === null) {
       return res.status(400).json({ success: false, message: "Tựa đề và giá sách không được để trống!" });
     }
 
-    // Gọi hàm create trong model Product để lưu thông tin xuống Postgres
+    if (!category_ids || !Array.isArray(category_ids) || category_ids.length === 0) {
+      return res.status(400).json({ success: false, message: "Sản phẩm phải thuộc ít nhất một danh mục hợp lệ!" });
+    }
+
+    // Gọi hàm tạo tích hợp đa danh mục từ Model xuống Postgres
     const newProduct = await Product.create({
       title,
       price,
       tax_rate,
       stock_quantity,
-      category_id,
+      category_ids, // <--- Truyền mảng đi xuống Model xử lý tiếp
       cover_image,
       author,
       description,
       rating
     });
 
-    // Trả về phản hồi thành công kèm dữ liệu cuốn sách vừa tạo
     res.status(201).json({ 
       success: true, 
-      message: "Thêm sách mới vào hệ thống thành open thành công!", 
+      message: "Thêm sách mới vào hệ thống thành công!", 
       data: newProduct 
     });
 
@@ -70,5 +74,25 @@ const createProduct = async (req, res) => {
   }
 };
 
-// EXPORT ĐẦY ĐỦ CẢ 3 BIẾN ĐỂ ROUTE SỬ DỤNG
-module.exports = { getAllProducts, getProductById, createProduct };
+const getRelatedProducts = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // 💡 Gọi hàm từ tầng Model đã khai báo ở trên
+    const data = await Product.getRelated(id);
+
+    return res.status(200).json({
+      success: true,
+      data: data
+    });
+  } catch (error) {
+    console.error("🔥 Lỗi tại getRelatedProducts Controller:", error.message);
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// Nhớ thêm getRelatedProducts vào module.exports ở cuối file nhé!
+module.exports = { getAllProducts, getProductById, createProduct, getRelatedProducts };
