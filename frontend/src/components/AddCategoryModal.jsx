@@ -1,11 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { categoryService } from '../services/api';
 import { toast } from 'react-toastify';
 
 const AddCategoryModal = ({ isOpen, onClose }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [categoryType, setCategoryType] = useState('main'); // 'main' là mục chính, 'sub' là mục con
+  const [parentId, setParentId] = useState(''); // Lưu ID của danh mục chính ràng buộc
+  const [mainCategories, setMainCategories] = useState([]); // Danh sách mục chính lấy từ DB
   const [submitting, setSubmitting] = useState(false);
+
+  // Mỗi khi mở modal, tải danh sách các danh mục chính hiện tại từ database
+  useEffect(() => {
+    if (isOpen) {
+      categoryService.getAll()
+        .then(res => {
+          const allCats = res.data.data || res.data || [];
+          // Chỉ lấy các danh mục chính (không có parent_id) làm ràng buộc cha
+          const mains = allCats.filter(cat => !cat.parent_id);
+          setMainCategories(mains);
+        })
+        .catch(err => {
+          console.error("Lỗi lấy danh mục chính:", err);
+          toast.error("❌ Không thể tải danh sách danh mục chính.");
+        });
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -16,13 +36,30 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
       return;
     }
 
+    // Kiểm tra ràng buộc bắt buộc: Nếu chọn tạo mục con thì phải chọn mục cha
+    if (categoryType === 'sub' && !parentId) {
+      toast.warning("⚠️ Bạn phải chọn một Danh mục chính để ràng buộc danh mục con!");
+      return;
+    }
+
     setSubmitting(true);
+    
+    // Đóng gói dữ liệu gửi lên backend (nếu là mục chính, parent_id sẽ là null)
+    const payload = {
+      name: name.trim(),
+      description: description.trim(),
+      parent_id: categoryType === 'sub' ? Number(parentId) : null
+    };
+
     try {
-      const response = await categoryService.create({ name, description });
-      if (response.data.success) {
+      const response = await categoryService.create(payload);
+      if (response.data.success || response.data) {
         toast.success(`✨ Đã thêm danh mục: "${name}" thành công!`);
+        // Reset form về trạng thái ban đầu
         setName('');
         setDescription('');
+        setCategoryType('main');
+        setParentId('');
         onClose();
       }
     } catch (error) {
@@ -35,7 +72,7 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
 
   return (
     <div style={styles.overlay}>
-      <div style={styles.modalBox}>
+      <div style={styles.modalBox} className="modal-fade-in">
         <div style={styles.header}>
           <h3 style={styles.title}>📁 THÊM DANH MỤC SÁCH MỚI</h3>
           <button style={styles.closeTopBtn} onClick={onClose}>✕</button>
@@ -43,17 +80,68 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.body}>
+            
+            {/* 1. LỰA CHỌN LOẠI DANH MỤC */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Tên danh mục (*):</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} required style={styles.input} placeholder="Ví dụ: Truyện Trinh Thám" />
+              <label style={styles.label}>Cấp bậc danh mục:</label>
+              <select 
+                value={categoryType} 
+                onChange={e => {
+                  setCategoryType(e.target.value);
+                  if (e.target.value === 'main') setParentId(''); // Reset nếu chuyển về chính
+                }} 
+                style={styles.select}
+              >
+                <option value="main">Danh mục chính (Ví dụ: Văn Học, Kinh Tế)</option>
+                <option value="sub">Danh mục con (Ví dụ: Tiểu Thuyết, Thơ)</option>
+              </select>
             </div>
 
+            {/* 2. HIỂN THỊ CHỌN DANH MỤC CHA (CHỈ HIỆN KHI CHỌN LOẠI CON) */}
+            {categoryType === 'sub' && (
+              <div style={styles.inputGroup} className="input-slide-down">
+                <label style={styles.label}>Thuộc danh mục chính (*):</label>
+                <select 
+                  value={parentId} 
+                  onChange={e => setParentId(e.target.value)} 
+                  required
+                  style={{ ...styles.select, borderColor: '#F14D5C' }}
+                >
+                  <option value="">-- Chọn danh mục chính ràng buộc --</option>
+                  {mainCategories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* 3. TÊN DANH MỤC */}
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Tên danh mục mới (*):</label>
+              <input 
+                type="text" 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                required 
+                style={styles.input} 
+                placeholder={categoryType === 'main' ? "Ví dụ: Văn Học Trong Nước" : "Ví dụ: Truyện Trinh Thám"} 
+              />
+            </div>
+
+            {/* 4. MÔ TẢ */}
             <div style={styles.inputGroup}>
               <label style={styles.label}>Mô tả danh mục:</label>
-              <textarea rows="3" value={description} onChange={e => setDescription(e.target.value)} style={styles.textarea} placeholder="Mô tả ngắn gọn về nhóm sách này..." />
+              <textarea 
+                rows="3" 
+                value={description} 
+                onChange={e => setDescription(e.target.value)} 
+                style={styles.textarea} 
+                placeholder="Mô tả ngắn gọn về nhóm sách này..." 
+              />
             </div>
           </div>
 
+          {/* HÀNH ĐỘNG FOOTER */}
           <div style={styles.footerActions}>
             <button type="button" onClick={onClose} style={styles.cancelBtn} disabled={submitting}>HỦY</button>
             <button type="submit" style={styles.submitBtn} disabled={submitting}>
@@ -67,20 +155,22 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
 };
 
 const styles = {
-  overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1001 },
-  modalBox: { backgroundColor: '#ffffff', borderRadius: '8px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', boxShadow: '0 5px 20px rgba(0,0,0,0.2)' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', borderBottom: '1px solid #eee' },
-  title: { margin: 0, fontSize: '15px', color: '#2C3E50', fontWeight: 'bold' },
-  closeTopBtn: { background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#999' },
+  overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1001, backdropFilter: 'blur(3px)' },
+  modalBox: { backgroundColor: '#ffffff', borderRadius: '12px', width: '90%', maxWidth: '420px', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 30px rgba(0,0,0,0.15)', overflow: 'hidden' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #f1f2f6' },
+  title: { margin: 0, fontSize: '14px', color: '#2C3E50', fontWeight: '800', letterSpacing: '0.5px' },
+  closeTopBtn: { background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#999', transition: 'color 0.2s' },
   form: { display: 'flex', flexDirection: 'column' },
-  body: { padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' },
-  inputGroup: { display: 'flex', flexDirection: 'column', gap: '5px' },
-  label: { fontSize: '13px', fontWeight: 'bold', color: '#444' },
-  input: { padding: '10px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', outline: 'none' },
-  textarea: { padding: '10px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', outline: 'none', resize: 'none', fontFamily: 'Arial' },
-  footerActions: { display: 'flex', justifyContent: 'flex-end', gap: '10px', padding: '15px 20px', borderTop: '1px solid #eee', backgroundColor: '#f8f9fa', borderRadius: '0 0 8px 8px' },
-  cancelBtn: { padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer', fontSize: '13px' },
-  submitBtn: { padding: '8px 16px', borderRadius: '4px', border: 'none', backgroundColor: '#2980b9', color: '#fff', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }
+  body: { padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' },
+  inputGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
+  label: { fontSize: '12.5px', fontWeight: 'bold', color: '#333' },
+  input: { padding: '10px 14px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13.5px', outline: 'none', transition: 'all 0.2s' },
+  select: { padding: '10px 14px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13.5px', outline: 'none', backgroundColor: '#fff', cursor: 'pointer', transition: 'all 0.2s' },
+  textarea: { padding: '10px 14px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13.5px', outline: 'none', resize: 'none', fontFamily: 'Arial, sans-serif', transition: 'all 0.2s' },
+  footerActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '14px 20px', borderTop: '1px solid #f1f2f6', backgroundColor: '#f8f9fa' },
+  cancelBtn: { padding: '9px 18px', borderRadius: '20px', border: '1px solid #ddd', backgroundColor: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#666', transition: 'all 0.2s' },
+  // ĐỒNG BỘ NÚT SANG MÀU ĐỎ THƯƠNG HIỆU FAHASA
+  submitBtn: { padding: '9px 20px', borderRadius: '20px', border: 'none', backgroundColor: '#F14D5C', color: '#fff', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', boxShadow: '0 4px 12px rgba(241, 77, 92, 0.2)', transition: 'all 0.2s' }
 };
 
 export default AddCategoryModal;

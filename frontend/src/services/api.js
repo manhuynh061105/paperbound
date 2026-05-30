@@ -1,10 +1,14 @@
 import axios from 'axios';
 
 const API = axios.create({
-  // Vite sẽ tự động chọn URL phù hợp: chạy local sẽ lấy localhost, khi deploy lên Vercel/Netlify nó sẽ lấy URL trên đó
+  // Tự động lấy URL Backend theo môi trường (Local / Deploy)
   baseURL: import.meta.env.VITE_API_BASE_URL, 
+  headers: {
+    'Content-Type': 'application/json',
+  }
 });
 
+// 1. DỊCH VỤ USER
 export const userService = {
   register: (data) => API.post('/users/register', data),
   login: (data) => API.post('/users/login', data),
@@ -12,14 +16,15 @@ export const userService = {
   updateProfile: (id, data) => API.put(`/users/profile/${id}`, data),
 };
 
-// ... các hàm productService, cartService giữ nguyên như cũ ...
-// Thêm hàm "create" vào trong cụm cấu hình productService
+// 2. DỊCH VỤ SẢN PHẨM (Gộp chung tất cả vào đây để tránh lỗi trùng lặp biến)
 export const productService = {
   getAll: () => API.get('/products'),
   getById: (id) => API.get(`/products/${id}`),
-  create: (data) => API.post('/products', data), // <-- BỔ SUNG DÒNG NÀY
+  create: (data) => API.post('/products', data), 
+  getRelated: (id) => API.get(`/products/${id}/related`), // 💡 BỔ SUNG: Phục vụ trang chi tiết sách
 };
 
+// 3. DỊCH VỤ GIỎ HÀNG
 export const cartService = {
   getByUserId: (userId) => API.get(`/cart/${userId}`),
   add: (data) => API.post('/cart/add', data),
@@ -27,12 +32,13 @@ export const cartService = {
   updateQuantity: (data) => API.put('/cart/update', data),
 };
 
+// 4. DỊCH VỤ ĐƠN HÀNG
 export const orderService = {
-  checkout: (data) => API.post('/orders/checkout', data),
+  create: (data) => API.post('/orders/checkout', data),
 };
 
+// 5. DỊCH VỤ DANH MỤC
 export const categoryService = {
   getAll: () => API.get('/categories'),
-  create: (data) => API.post('/categories', data), // Phục vụ tính năng thêm danh mục ở bước sau
+  create: (data) => API.post('/categories', data), 
 };
-

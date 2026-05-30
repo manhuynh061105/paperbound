@@ -26,7 +26,7 @@ app.use(logger);
 // DEFINING API ROUTES (ĐỊNH NGHĨA TUYẾN ĐƯỜNG)
 // =========================================================
 app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes);
+app.use('/api/orders', require('./src/routes/orderRoutes'));
 app.use('/api/cart', cartRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai-chat', aiChatRoutes);

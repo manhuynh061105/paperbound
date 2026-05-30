@@ -10,12 +10,27 @@ const getCart = async (req, res) => {
   }
 };
 
+// Sửa lại hàm addItem trong cartController.js của hai bạn:
 const addItem = async (req, res) => {
   try {
     const { userId, productId, quantity } = req.body;
-    const newItem = await Cart.addToCart(userId, productId, quantity || 1);
+
+    // 💡 BẢO VỆ DB: Kiểm tra và ép kiểu số rõ ràng
+    const cleanUserId = typeof userId === 'object' && userId !== null ? userId.id : Number(userId);
+    const cleanProductId = typeof productId === 'object' && productId !== null ? productId.id : Number(productId);
+    const cleanQuantity = Number(quantity) || 1;
+
+    if (!cleanUserId || !cleanProductId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Dữ liệu userId hoặc productId gửi lên không hợp lệ (bị ép kiểu lỗi)!" 
+      });
+    }
+
+    const newItem = await Cart.addToCart(cleanUserId, cleanProductId, cleanQuantity);
     res.status(201).json({ success: true, data: newItem });
   } catch (error) {
+    console.error("🔥 Lỗi tại addItem Controller:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
