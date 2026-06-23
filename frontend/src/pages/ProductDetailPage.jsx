@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { productService, cartService } from '../services/api'; // 💡 ĐÃ BỔ SUNG: Import cartService để gọi trực tiếp API
+import { productService, cartService, reviewService } from '../services/api'; // 💡 ĐÃ CẬP NHẬT: Import thêm reviewService để gọi chuẩn API
 import { toast } from 'react-toastify';
 
-const ProductDetailPage = ({ onAddToCart, refreshCartCount, currentUser }) => { // 💡 Đã đổi prop từ onAddToCart thành refreshCartCount để đồng bộ icon giỏ hàng trên Header
+const ProductDetailPage = ({ onAddToCart, refreshCartCount, currentUser }) => { 
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -32,7 +32,11 @@ const ProductDetailPage = ({ onAddToCart, refreshCartCount, currentUser }) => { 
         console.error("❌ Lỗi API sách liên quan:", err);
         return { data: { data: [] } };
       }),
-      productService.getById(`${id}/reviews`).catch(() => ({ data: { data: [] } }))
+      // 💥 THAY ĐỔI CHÍNH TẠI ĐÂY: Gọi chuẩn dịch vụ reviewService mới thay vì productService cũ
+      reviewService.getByProductId(id).catch(err => {
+        console.error("❌ Lỗi API lấy danh sách nhận xét sản phẩm:", err);
+        return { data: { data: [] } };
+      })
     ])
     .then(([resProd, resRelated, resReviews]) => {
       if (!resProd) {
@@ -61,11 +65,12 @@ const ProductDetailPage = ({ onAddToCart, refreshCartCount, currentUser }) => { 
       const relatedData = resRelated?.data?.data || resRelated?.data || [];
       setRelatedProducts(Array.isArray(relatedData) ? relatedData : []);
 
+      // Bóc tách mảng dữ liệu trả về từ API review chuẩn cấu trúc Backend
       const reviewsData = resReviews?.data?.data || resReviews?.data || [];
       setReviews(Array.isArray(reviewsData) ? reviewsData : []);
     })
     .catch(err => {
-      console.error("🔥 Lỗi hệ thống:", err);
+      console.error("🔥 Lỗi hệ thống trang chi tiết:", err);
       toast.error("❌ Có lỗi xảy ra khi tải dữ liệu trang!");
     })
     .finally(() => setLoading(false));
@@ -92,7 +97,6 @@ const ProductDetailPage = ({ onAddToCart, refreshCartCount, currentUser }) => { 
     setQuantity(val);
   };
 
-  // 💡 ĐÃ SỬA CHUẨN: Gọi đúng hàm .add từ cartService
   const handleBuyClick = async () => {
     if (!userId) {
       toast.info("👤 Vui lòng đăng nhập để thực hiện mua sắm!");
@@ -106,7 +110,6 @@ const ProductDetailPage = ({ onAddToCart, refreshCartCount, currentUser }) => { 
     }
 
     try {
-      // Đóng gói Payload: Ép kiểu Số nguyên (Number) chắc chắn để triệt tiêu hoàn toàn lỗi [object Object]
       const payload = {
         userId: Number(userId),
         productId: Number(product.id),
@@ -114,13 +117,10 @@ const ProductDetailPage = ({ onAddToCart, refreshCartCount, currentUser }) => { 
       };
 
       console.log("🚀 Gửi dữ liệu giỏ hàng chuẩn lên API:", payload);
-      
-      // 💥 THAY ĐỔI CHÍNH Ở ĐÂY: Chuyển từ .updateQuantity thành .add
-      const response = await cartService.add(payload); 
+      await cartService.add(payload); 
       
       toast.success(`🛒 Đã thêm ${quantity} cuốn "${product.title}" vào giỏ hàng thành công!`);
       
-      // Kích hoạt hàm đồng bộ số lượng giỏ hàng trên thanh Header chính
       if (refreshCartCount) {
         refreshCartCount();
       }
@@ -217,9 +217,9 @@ const ProductDetailPage = ({ onAddToCart, refreshCartCount, currentUser }) => { 
             </p>
           </div>
 
-          {/* Khối Đánh giá (Reviews) */}
+          {/* ================= KHỐI ĐÁNH GIÁ (REVIEWS) ĐÃ ĐƯỢC ĐỒNG BỘ ================= */}
           <div style={styles.sectionCard}>
-            <h3 style={styles.sectionHeader}>💬 Đánh giá từ cộng đồng độc giả</h3>
+            <h3 style={styles.sectionHeader}>💬 Đánh giá từ cộng đồng độc giả ({reviews.length})</h3>
             {reviews.length === 0 ? (
               <div style={styles.emptyContainer}>
                 <div style={styles.emptyIcon}>✍️</div>
@@ -230,12 +230,44 @@ const ProductDetailPage = ({ onAddToCart, refreshCartCount, currentUser }) => { 
               <div style={styles.reviewsList}>
                 {reviews.map(rev => (
                   <div key={rev.id} style={styles.reviewItem}>
+                    
+                    {/* Header đánh giá: Tên user lấy từ dữ liệu JOIN ở Backend */}
                     <div style={styles.reviewMeta}>
-                      <span style={styles.reviewUser}>👤 {rev.user_name || rev.user || "Khách hàng"}</span>
-                      <span style={styles.reviewDate}>{rev.created_at || rev.date || "Vừa xong"}</span>
+                      <span style={styles.reviewUser}>
+                        👤 {rev.username || rev.user_name || "Độc giả ẩn danh"}
+                      </span>
+                      <span style={styles.reviewDate}>
+                        📅 {rev.created_at ? new Date(rev.created_at).toLocaleDateString('vi-VN') : "Vừa xong"}
+                      </span>
                     </div>
-                    <div style={{ margin: '4px 0' }}>{renderStars(rev.rating)}</div>
+                    
+                    {/* Điểm sao */}
+                    <div style={{ margin: '6px 0' }}>{renderStars(rev.rating)}</div>
+                    
+                    {/* Nội dung nhận xét chữ */}
                     <p style={styles.reviewComment}>{rev.comment}</p>
+                    
+                    {/* 📸 HIỂN THỊ HÌNH ẢNH THỰC TẾ (NẾU CÓ) */}
+                    {rev.review_image && (
+                      <div style={{ marginTop: '12px' }}>
+                        <img 
+                          src={rev.review_image} 
+                          alt="Ảnh thực tế sản phẩm" 
+                          style={{
+                            width: '100px',
+                            height: '100px',
+                            objectFit: 'cover',
+                            borderRadius: '8px',
+                            border: '1px solid #E0E0E0',
+                            cursor: 'zoom-in',
+                            transition: 'transform 0.2s ease'
+                          }}
+                          onClick={() => window.open(rev.review_image, '_blank')}
+                          onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -303,7 +335,7 @@ const ProductDetailPage = ({ onAddToCart, refreshCartCount, currentUser }) => { 
   );
 };
 
-// ================= THIẾT KẾ STYLESHEET CAO CẤP =================
+// ================= STYLESHEET =================
 const styles = {
   container: { padding: '40px 8%', backgroundColor: '#F4F6F8', minHeight: '90vh', fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif' },
   centerBox: { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '70vh', gap: '20px' },

@@ -17,6 +17,7 @@ import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import MenuPage from './pages/MenuPage';
+import OrderHistoryPage from './pages/OrderHistoryPage';
 
 // Import Services
 import { cartService, productService } from './services/api';
@@ -126,6 +127,7 @@ function App() {
             <Route path="/auth" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/products" element={<MenuPage refreshCartCount={refreshCartCount} />} />
+            <Route path="/orders-history" element={<OrderHistoryPage />} />
             
             {/* 💡 ĐÃ SỬA CHUẨN: Bổ sung prop refreshCartCount để trang chi tiết thực thi đồng bộ số lượng lên Header */}
             <Route 

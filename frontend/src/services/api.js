@@ -16,12 +16,14 @@ export const userService = {
   updateProfile: (id, data) => API.put(`/users/profile/${id}`, data),
 };
 
-// 2. DỊCH VỤ SẢN PHẨM (Gộp chung tất cả vào đây để tránh lỗi trùng lặp biến)
+// 2. DỊCH VỤ SẢN PHẨM
 export const productService = {
   getAll: () => API.get('/products'),
   getById: (id) => API.get(`/products/${id}`),
   create: (data) => API.post('/products', data), 
-  getRelated: (id) => API.get(`/products/${id}/related`), // 💡 BỔ SUNG: Phục vụ trang chi tiết sách
+  getRelated: (id) => API.get(`/products/${id}/related`), 
+  // ✅ ĐÃ SỬA: Thay 'axios.get' thành 'API.get' để chạy đúng URL Backend
+  getReviews: (productId) => API.get(`/products/${productId}/reviews`),
 };
 
 // 3. DỊCH VỤ GIỎ HÀNG
@@ -35,10 +37,25 @@ export const cartService = {
 // 4. DỊCH VỤ ĐƠN HÀNG
 export const orderService = {
   create: (data) => API.post('/orders/checkout', data),
+  getByUserId: (userId) => API.get(`/orders/user/${userId}`),
+  updateStatus: (orderId, data) => API.put(`/orders/${orderId}/status`, data),
 };
 
 // 5. DỊCH VỤ DANH MỤC
 export const categoryService = {
   getAll: () => API.get('/categories'),
   create: (data) => API.post('/categories', data), 
+};
+
+// 6. DỊCH VỤ ĐÁNH GIÁ (Gộp chung toàn bộ xử lý review về đây)
+export const reviewService = {
+  // Gửi FormData bao gồm text bình luận, số sao và file ảnh up lên backend
+  create: (formData) => API.post('/reviews', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data', // Bắt buộc cấu hình này để gửi được file kèm theo
+    }
+  }),
+
+  // 💥 ĐÃ BỔ SUNG: Lấy danh sách nhận xét kèm ảnh từ Backend theo đúng mẫu Route mới
+  getByProductId: (productId) => API.get(`/reviews/${productId}/reviews`),
 };

@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
-const path = require('path');
-// Trỏ ngược ra ngoài 1 cấp để tìm file .env vì db.js đang nằm trong src/config
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config();
+
+const isProduction = process.env.NODE_ENV === 'production' || process.env.DB_HOST !== 'localhost';
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -9,6 +9,8 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
+  // 🔥 TỰ ĐỘNG BẬT SSL KHI DEPLOY (Không cần sửa code khi lên server)
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
 module.exports = pool;
