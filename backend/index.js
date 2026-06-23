@@ -22,7 +22,7 @@ const app = express();
 // MIDDLEWARE CONFIGURATION (CẤU HÌNH HỆ THỐNG)
 // =========================================================
 
-// 🟢 Cấu hình CORS mở rộng - Cho phép tất cả các nguồn gọi API
+// 🟢 Cấu hình CORS mở rộng - Cho phép tất cả các nguồn gọi API & tự xử lý OPTIONS preflight
 app.use(cors({
   origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -31,26 +31,11 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-// =========================================================
-// MIDDLEWARE CONFIGURATION (CẤU HÌNH HỆ THỐNG)
-// =========================================================
-
-// 🟢 Cấu hình CORS mở rộng - Cho phép tất cả các nguồn gọi API
-app.use(cors({
-  origin: '*', 
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-}));
-
-// 🟢 XỬ LÝ CHO REQ LỆNH OPTIONS (Đã sửa ký tự '*' thành '(.*)' theo chuẩn Express v5)
-app.options('(.*)', cors());
-
-// Giới hạn xử lý chuỗi dữ liệu lớn (Base64)
+// Giới hạn xử lý chuỗi dữ liệu lớn (Base64) - CHỈ CẦN KHAI BÁO 1 LẦN
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Ghi nhận log truy cập hệ thống
 app.use(logger);
 
 // =========================================================
