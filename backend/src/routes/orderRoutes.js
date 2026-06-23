@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { checkout } = require('../controllers/orderController');
+const orderController = require('../controllers/orderController');
 
-// 💡 Trả lại sự nguyên bản, chạy trực tiếp hàm checkout không qua middleware trung gian nữa
-router.post('/checkout', checkout);
+// 💡 Chạy trực tiếp qua đối tượng orderController gom gọn
+router.post('/checkout', orderController.checkout); 
+router.get('/user/:userId', orderController.getOrdersByUserId);
+router.put('/:orderId/status', orderController.updateOrderStatus);
 
 module.exports = router;

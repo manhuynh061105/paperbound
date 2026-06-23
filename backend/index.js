@@ -7,6 +7,7 @@ const cartRoutes = require('./src/routes/cartRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const aiChatRoutes = require('./src/routes/aiChatRoutes');
 const categoryRoutes = require('./src/routes/categoryRoutes');
+const reviewRoutes = require('./src/routes/reviewRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai-chat', aiChatRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // API Gốc để test kết nối server nhanh
 app.get('/', (req, res) => {
