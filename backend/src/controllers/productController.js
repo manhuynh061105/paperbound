@@ -4,9 +4,33 @@ const pool = require('../config/db');
 // 1. LẤY TOÀN BỘ DANH SÁCH SẢN PHẨM (ĐÃ BAO GỒM ĐA DANH MỤC)
 const getAllProducts = async (req, res) => {
   try {
-    const data = await Product.findAll();
+    // Lấy danh sách sản phẩm gốc từ Model
+    const products = await Product.findAll();
+    
+    // Truy vấn tất cả các mối quan hệ trong bảng trung gian product_categories
+    // Bảng trung gian của bạn chứa: product_id và category_id
+    const relationsResult = await pool.query('SELECT product_id, category_id FROM product_categories');
+    const relations = relationsResult.rows || relationsResult; // Tùy thuộc vào thư viện pg trả về rows trực tiếp hay qua mảng
+
+    // Gộp mảng category_ids vào từng object sản phẩm tương ứng
+    const data = products.map(product => {
+      // Ép kiểu sản phẩm về object thuần nếu là Sequelize Instance
+      const productObj = product.toJSON ? product.toJSON() : { ...product };
+      
+      // Lọc ra các category_id thuộc về product_id này
+      const matchedCategories = relations
+        .filter(rel => rel.product_id.toString() === productObj.id.toString())
+        .map(rel => rel.category_id);
+
+      return {
+        ...productObj,
+        category_ids: matchedCategories // <--- Đính kèm mảng ID vào đây cho Frontend dùng
+      };
+    });
+
     res.json({ success: true, data });
   } catch (err) {
+    console.error("Lỗi tại getAllProducts Controller:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 };

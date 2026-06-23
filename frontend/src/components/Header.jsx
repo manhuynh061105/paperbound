@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 const Header = ({ cartCount, userRole, currentUser, openAdminModal, openCategoryModal, onLogout }) => {
   const navigate = useNavigate();
   const [isCategoryHovered, setIsCategoryHovered] = useState(false);
+  const [isMenuHovered, setIsMenuHovered] = useState(false); // 💡 BỔ SUNG: State hover cho nút Menu mới
   const [isUserHovered, setIsUserHovered] = useState(false);
   const [isAdminHovered, setIsAdminHovered] = useState(false);
   const [searchKey, setSearchKey] = useState('');
@@ -60,51 +61,69 @@ const Header = ({ cartCount, userRole, currentUser, openAdminModal, openCategory
         <h1 style={styles.logoText}>PAPERBOUND<span style={{ color: '#F14D5C' }}>.</span></h1>
       </div>
 
-      {/* DROPDOWN DANH MỤC PHÂN CẤP ĐỘNG */}
-      <div 
-        style={styles.menuContainer}
-        onMouseEnter={() => setIsCategoryHovered(true)}
-        onMouseLeave={() => setIsCategoryHovered(false)}
-      >
-        <button style={{
-          ...styles.categoryTriggerBtn,
-          backgroundColor: isCategoryHovered ? '#FFF2F3' : '#ffffff',
-          color: isCategoryHovered ? '#F14D5C' : '#444',
-          borderColor: isCategoryHovered ? '#F14D5C' : '#ddd'
-        }}>
-          ☰ Danh mục ▾
+      {/* CỤM ĐIỀU HƯỚNG BÊN TRÁI */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* DROPDOWN DANH MỤC PHÂN CẤP ĐỘNG */}
+        <div 
+          style={styles.menuContainer}
+          onMouseEnter={() => setIsCategoryHovered(true)}
+          onMouseLeave={() => setIsCategoryHovered(false)}
+        >
+          <button style={{
+            ...styles.categoryTriggerBtn,
+            backgroundColor: isCategoryHovered ? '#FFF2F3' : '#ffffff',
+            color: isCategoryHovered ? '#F14D5C' : '#444',
+            borderColor: isCategoryHovered ? '#F14D5C' : '#ddd'
+          }}>
+            ☰ Danh mục ▾
+          </button>
+          
+          {isCategoryHovered && structuredCategories.length > 0 && (
+            <div style={styles.dropdownMenu} className="smooth-dropdown">
+              {structuredCategories.map(cat => (
+                <div key={cat.id} style={styles.categoryItem} className="hover-category-item" onClick={() => { navigate(`/products?category=${cat.id}`); setIsCategoryHovered(false); }}>
+                  <span>{cat.name}</span>
+                  {cat.sub && cat.sub.length > 0 && <span style={{ fontSize: '11px', color: '#aaa' }}>➔</span>}
+                  
+                  {/* HIỂN THỊ DANH MỤC PHỤ KHI HOVER VÀO DANH MỤC CHÍNH */}
+                  {cat.sub && cat.sub.length > 0 && (
+                    <div style={styles.subCategoryMenu} className="smooth-dropdown">
+                      {cat.sub.map(subItem => (
+                        <div 
+                          key={subItem.id} 
+                          style={styles.subItem} 
+                          className="hover-sub-item" 
+                          onClick={(e) => {
+                            e.stopPropagation(); // Ngăn click lan ra danh mục cha
+                            navigate(`/products?category=${subItem.id}`);
+                            setIsCategoryHovered(false);
+                          }}
+                        >
+                          {subItem.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 💡 NÚT MENU THÊM MỚI: TẤT CẢ SẢN PHẨM */}
+        <button 
+          onClick={() => navigate('/products')}
+          onMouseEnter={() => setIsMenuHovered(true)}
+          onMouseLeave={() => setIsMenuHovered(false)}
+          style={{
+            ...styles.categoryTriggerBtn,
+            backgroundColor: isMenuHovered ? '#FFF2F3' : '#ffffff',
+            color: isMenuHovered ? '#F14D5C' : '#444',
+            borderColor: isMenuHovered ? '#F14D5C' : '#ddd'
+          }}
+        >
+          📖 Tất cả sách
         </button>
-        
-        {isCategoryHovered && structuredCategories.length > 0 && (
-          <div style={styles.dropdownMenu} className="smooth-dropdown">
-            {structuredCategories.map(cat => (
-              <div key={cat.id} style={styles.categoryItem} className="hover-category-item" onClick={() => navigate(`/products?category=${cat.id}`)}>
-                <span>{cat.name}</span>
-                {cat.sub && cat.sub.length > 0 && <span style={{ fontSize: '11px', color: '#aaa' }}>➔</span>}
-                
-                {/* HIỂN THỊ DANH MỤC PHỤ KHI HOVER VÀO DANH MỤC CHÍNH */}
-                {cat.sub && cat.sub.length > 0 && (
-                  <div style={styles.subCategoryMenu} className="smooth-dropdown">
-                    {cat.sub.map(subItem => (
-                      <div 
-                        key={subItem.id} 
-                        style={styles.subItem} 
-                        className="hover-sub-item" 
-                        onClick={(e) => {
-                          e.stopPropagation(); // Ngăn click lan ra danh mục cha
-                          navigate(`/products?category=${subItem.id}`);
-                          setIsCategoryHovered(false);
-                        }}
-                      >
-                        {subItem.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* TÌM KIẾM */}
@@ -213,7 +232,7 @@ const styles = {
   categoryItem: { position: 'relative', padding: '12px 18px', cursor: 'pointer', color: '#333', fontSize: '13.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.15s' },
   subCategoryMenu: { display: 'none', position: 'absolute', top: 0, left: '100%', backgroundColor: '#ffffff', width: '190px', boxShadow: '8px 8px 24px rgba(0,0,0,0.1)', borderRadius: '0 8px 8px 0', borderLeft: '2px solid #F14D5C', padding: '6px 0' },
   subItem: { padding: '10px 18px', color: '#555', fontSize: '13.5px', transition: 'all 0.15s' },
-  searchBarContainer: { flex: 1, display: 'flex', margin: '0 30px', maxWidth: '460px', border: '2px solid #F14D5C', borderRadius: '24px', overflow: 'hidden', backgroundColor: '#ffffff' },
+  searchBarContainer: { flex: 1, display: 'flex', margin: '0 20px', maxWidth: '400px', border: '2px solid #F14D5C', borderRadius: '24px', overflow: 'hidden', backgroundColor: '#ffffff' },
   searchInput: { flex: 1, padding: '9px 18px', border: 'none', outline: 'none', fontSize: '13.5px', color: '#333' },
   searchBtn: { backgroundColor: '#F14D5C', border: 'none', color: '#fff', padding: '0 18px', cursor: 'pointer', fontSize: '14px' },
   navActions: { display: 'flex', alignItems: 'center', gap: '22px' },
@@ -227,7 +246,7 @@ const styles = {
   googleAvatar: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#F14D5C', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', border: '1px solid #fff', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' },
   userNameText: { fontSize: '13.5px', fontWeight: '600', color: '#2C3E50' },
   dropdownItem: { padding: '11px 18px', fontSize: '13.5px', color: '#333', cursor: 'pointer', textAlign: 'left' },
-  divider: { border: 'none', borderTop: '1px solid #f1f2f6', margin: '4px 0' }
+  divider: { none: 'none', borderTop: '1px solid #f1f2f6', margin: '4px 0' }
 };
 
 export default Header;

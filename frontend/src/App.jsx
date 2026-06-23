@@ -16,6 +16,7 @@ import CheckoutPage from './pages/CheckoutPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import MenuPage from './pages/MenuPage';
 
 // Import Services
 import { cartService, productService } from './services/api';
@@ -124,6 +125,7 @@ function App() {
             <Route path="/checkout" element={<CheckoutPage refreshCartCount={refreshCartCount} />} />
             <Route path="/auth" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/products" element={<MenuPage refreshCartCount={refreshCartCount} />} />
             
             {/* 💡 ĐÃ SỬA CHUẨN: Bổ sung prop refreshCartCount để trang chi tiết thực thi đồng bộ số lượng lên Header */}
             <Route 
