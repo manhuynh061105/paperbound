@@ -31,9 +31,21 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-// 🟢 XỬ LÝ ĐẰNG PHẲNG CHO REQ LỆNH OPTIONS (PREFLIGHT)
-// Giúp vượt qua bộ lọc kiểm tra nghiêm ngặt của trình duyệt khi deploy Cloud
-app.options('*', cors());
+// =========================================================
+// MIDDLEWARE CONFIGURATION (CẤU HÌNH HỆ THỐNG)
+// =========================================================
+
+// 🟢 Cấu hình CORS mở rộng - Cho phép tất cả các nguồn gọi API
+app.use(cors({
+  origin: '*', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
+// 🟢 XỬ LÝ CHO REQ LỆNH OPTIONS (Đã sửa ký tự '*' thành '(.*)' theo chuẩn Express v5)
+app.options('(.*)', cors());
 
 // Giới hạn xử lý chuỗi dữ liệu lớn (Base64)
 app.use(express.json({ limit: '50mb' })); 
