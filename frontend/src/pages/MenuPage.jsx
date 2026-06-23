@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { productService, categoryService, cartService } from '../services/api';
 import { toast } from 'react-toastify';
+import { useSearchParams } from 'react-router-dom';
 
 const MenuPage = ({ refreshCartCount }) => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ const MenuPage = ({ refreshCartCount }) => {
   const [loading, setLoading] = useState(true);
   
   // --- STATE QUẢN LÝ BỘ LỌC (FILTER) & PHÂN TRANG ---
-  const [searchQuery, setSearchQuery] = useState(''); // State tìm kiếm mới tại sidebar
+  const [searchQuery, setSearchQuery] = useState(''); 
   const [selectedMainCat, setSelectedMainCat] = useState('all');
   const [selectedSubCat, setSelectedSubCat] = useState('all');
   const [sortBy, setSortBy] = useState('latest');
@@ -24,14 +25,17 @@ const MenuPage = ({ refreshCartCount }) => {
   const savedUser = JSON.parse(localStorage.getItem('user'));
   const userId = savedUser ? savedUser.id : null;
 
+  // Đọc các bộ lọc được truyền từ Header qua URL query strings
+  const [searchParams] = useSearchParams();
+  const categoryFilter = searchParams.get('category'); 
+  const searchFilter = searchParams.get('search');     
+
   // 1. LẤY DANH MỤC VÀ PHÂN CẤP TỪ API
   useEffect(() => {
     categoryService.getAll()
       .then(res => {
         const allCats = res.data.data || res.data || [];
-        // Lọc danh mục chính (không có parent_id hoặc parent_id trống)
         const mainCats = allCats.filter(cat => !cat.parent_id);
-        // Gắn danh mục phụ tương ứng
         const hierarchy = mainCats.map(main => ({
           ...main,
           sub: allCats.filter(sub => sub.parent_id && sub.parent_id.toString() === main.id.toString())
@@ -41,14 +45,51 @@ const MenuPage = ({ refreshCartCount }) => {
       .catch(err => console.error("Lỗi nạp danh mục tại trang Menu:", err));
   }, []);
 
-  // 2. LẤY SẢN PHẨM THỰC TẾ TỪ DATABASE & LỌC TRÊN GIAO DIỆN
+  // 2. 🌟 BỔ SUNG: ĐỒNG BỘ URL QUERY VÀO STATE CỦA MENU PAGE KHI HEADER THAY ĐỔI
+  useEffect(() => {
+    if (searchFilter) {
+      setSearchQuery(searchFilter);
+    } else {
+      setSearchQuery('');
+    }
+
+    if (categoryFilter && structuredCategories.length > 0) {
+      const catIdStr = categoryFilter.toString();
+      
+      // Kiểm tra xem ID truyền vào là danh mục chính hay phụ
+      const isMainCat = structuredCategories.some(c => c.id.toString() === catIdStr);
+      
+      if (isMainCat) {
+        setSelectedMainCat(catIdStr);
+        setSelectedSubCat('all');
+      } else {
+        // Nếu là danh mục phụ, tìm xem danh mục cha của nó là ai để active cả 2 dropdown
+        const parentCat = structuredCategories.find(main => 
+          main.sub?.some(sub => sub.id.toString() === catIdStr)
+        );
+        if (parentCat) {
+          setSelectedMainCat(parentCat.id.toString());
+          setSelectedSubCat(catIdStr);
+        } else {
+          setSelectedMainCat('all');
+          setSelectedSubCat('all');
+        }
+      }
+    } else if (!categoryFilter) {
+      setSelectedMainCat('all');
+      setSelectedSubCat('all');
+    }
+    setCurrentPage(1); // Reset về trang 1 khi đổi bộ lọc
+  }, [categoryFilter, searchFilter, structuredCategories]);
+
+  // 3. LẤY SẢN PHẨM THỰC TẾ TỪ DATABASE & TIẾN HÀNH PHÂN LOẠI LỌC TRÊN GIAO DIỆN
   useEffect(() => {
     setLoading(true);
     productService.getAll()
       .then(res => {
         let allProducts = res.data.data || res.data || [];
 
-        // [MỚI] THAY THẾ CHỮ ĐỂ TÌM KIẾM THEO TÊN HOẶC TÁC GIẢ
+        // Logic lọc theo thanh Tìm kiếm
         if (searchQuery.trim() !== '') {
           const key = searchQuery.toLowerCase().trim();
           allProducts = allProducts.filter(p => 
@@ -57,29 +98,23 @@ const MenuPage = ({ refreshCartCount }) => {
           );
         }
 
-        // [SỬA ĐỔI] Logic Lọc Danh Mục: Sử dụng .includes() dựa trên mảng category_ids thật từ database
+        // Logic lọc danh mục
         if (selectedMainCat !== 'all' && selectedSubCat === 'all') {
-        const currentMainObj = structuredCategories.find(c => c.id.toString() === selectedMainCat.toString());
-        const subIds = currentMainObj?.sub?.map(s => s.id.toString()) || [];
-        
-        allProducts = allProducts.filter(p => {
-            // Đón nhận mảng category_ids từ Backend, nếu không có thì mặc định là mảng rỗng
+          const currentMainObj = structuredCategories.find(c => c.id.toString() === selectedMainCat.toString());
+          const subIds = currentMainObj?.sub?.map(s => s.id.toString()) || [];
+          
+          allProducts = allProducts.filter(p => {
             const pCatIds = p.category_ids ? p.category_ids.map(id => id.toString()) : [];
-            
-            // Sản phẩm thỏa mãn nếu nó thuộc danh mục chính HOẶC thuộc bất kỳ danh mục con nào của danh mục chính đó
-            return pCatIds.includes(selectedMainCat.toString()) || 
-                pCatIds.some(id => subIds.includes(id));
-        });
+            return pCatIds.includes(selectedMainCat.toString()) || pCatIds.some(id => subIds.includes(id));
+          });
         } else if (selectedSubCat !== 'all') {
-        allProducts = allProducts.filter(p => {
+          allProducts = allProducts.filter(p => {
             const pCatIds = p.category_ids ? p.category_ids.map(id => id.toString()) : [];
-            
-            // Sản phẩm thỏa mãn nếu mảng danh mục của nó chứa ID danh mục con đang chọn
             return pCatIds.includes(selectedSubCat.toString());
-        });
+          });
         }
 
-        // Logic Sắp xếp nâng cao chuyên sâu
+        // Sắp xếp nâng cao
         if (sortBy === 'latest') {
           allProducts.sort((a, b) => b.id - a.id);
         } else if (sortBy === 'oldest') {
@@ -99,7 +134,8 @@ const MenuPage = ({ refreshCartCount }) => {
         console.error("Lỗi nạp sản phẩm tại trang Menu:", err);
         setLoading(false);
       });
-  }, [searchQuery, selectedMainCat, selectedSubCat, sortBy, structuredCategories]);
+  // ✨ ĐÃ THÊM: categoryFilter và searchFilter vào dependency array bên dưới để React trigger render lại
+  }, [searchQuery, selectedMainCat, selectedSubCat, sortBy, structuredCategories, categoryFilter, searchFilter]);
 
   // --- XỬ LÝ THÊM VÀO GIỎ HÀNG THẬT ---
   const handleAddToCart = async (e, product) => {
@@ -133,9 +169,30 @@ const MenuPage = ({ refreshCartCount }) => {
   const totalPages = Math.ceil(products.length / itemsPerPage);
 
   const handleMainCatChange = (e) => {
-    setSelectedMainCat(e.target.value);
+    const value = e.target.value;
+    setSelectedMainCat(value);
     setSelectedSubCat('all'); 
     setCurrentPage(1);
+    
+    // Đồng bộ ngược lại URL để giữ tính nhất quán
+    if (value === 'all') {
+      navigate('/products');
+    } else {
+      navigate(`/products?category=${value}`);
+    }
+  };
+
+  const handleSubCatChange = (e) => {
+    const value = e.target.value;
+    setSelectedSubCat(value);
+    setCurrentPage(1);
+
+    // Đồng bộ ngược lại URL
+    if (value === 'all') {
+      navigate(`/products?category=${selectedMainCat}`);
+    } else {
+      navigate(`/products?category=${value}`);
+    }
   };
 
   return (
@@ -150,11 +207,10 @@ const MenuPage = ({ refreshCartCount }) => {
 
         <div style={styles.menuLayout}>
           
-          {/* ================= SIDEBAR CHỨA Ô TÌM KIẾM VÀ DROPDOWN BỘ LỌC ================= */}
+          {/* ================= SIDEBAR CHỨA BỘ LỌC ================= */}
           <aside style={styles.sidebar}>
             <h3 style={styles.sidebarTitle}>🔍 Bộ lọc tìm kiếm</h3>
             
-            {/* [MỚI] Thanh Tìm kiếm sản phẩm trực tiếp trong Sidebar */}
             <div style={styles.filterGroup}>
               <label style={styles.filterLabel}>Từ khóa tìm kiếm</label>
               <div style={styles.searchBoxWrapper}>
@@ -162,11 +218,15 @@ const MenuPage = ({ refreshCartCount }) => {
                   type="text"
                   placeholder="Nhập tên sách, tác giả..."
                   value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => { 
+                    setSearchQuery(e.target.value); 
+                    setCurrentPage(1);
+                    if(!e.target.value) navigate('/products');
+                  }}
                   style={styles.sidebarSearchInput}
                 />
                 {searchQuery && (
-                  <span style={styles.clearSearchBtn} onClick={() => setSearchQuery('')}>✕</span>
+                  <span style={styles.clearSearchBtn} onClick={() => { setSearchQuery(''); navigate('/products'); }}>✕</span>
                 )}
               </div>
             </div>
@@ -192,7 +252,7 @@ const MenuPage = ({ refreshCartCount }) => {
                 <label style={styles.filterLabel}>Thể loại chi tiết</label>
                 <select 
                   value={selectedSubCat} 
-                  onChange={(e) => { setSelectedSubCat(e.target.value); setCurrentPage(1); }} 
+                  onChange={handleSubCatChange} 
                   style={styles.selectInput}
                 >
                   <option value="all">📂 Tất cả thể loại con</option>
@@ -205,7 +265,7 @@ const MenuPage = ({ refreshCartCount }) => {
               </div>
             )}
 
-            {/* Dropdown Sắp xếp nâng cao chuyên sâu */}
+            {/* Dropdown Sắp xếp */}
             <div style={styles.filterGroup}>
               <label style={styles.filterLabel}>Sắp xếp theo</label>
               <select 
