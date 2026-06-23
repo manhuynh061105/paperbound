@@ -4,27 +4,19 @@ const pool = require('../config/db');
 // 1. LẤY TOÀN BỘ DANH SÁCH SẢN PHẨM (ĐÃ BAO GỒM ĐA DANH MỤC)
 const getAllProducts = async (req, res) => {
   try {
-    // Lấy danh sách sản phẩm gốc từ Model
     const products = await Product.findAll();
-    
-    // Truy vấn tất cả các mối quan hệ trong bảng trung gian product_categories
-    // Bảng trung gian của bạn chứa: product_id và category_id
     const relationsResult = await pool.query('SELECT product_id, category_id FROM product_categories');
-    const relations = relationsResult.rows || relationsResult; // Tùy thuộc vào thư viện pg trả về rows trực tiếp hay qua mảng
+    const relations = relationsResult.rows || relationsResult;
 
-    // Gộp mảng category_ids vào từng object sản phẩm tương ứng
     const data = products.map(product => {
-      // Ép kiểu sản phẩm về object thuần nếu là Sequelize Instance
       const productObj = product.toJSON ? product.toJSON() : { ...product };
-      
-      // Lọc ra các category_id thuộc về product_id này
       const matchedCategories = relations
         .filter(rel => rel.product_id.toString() === productObj.id.toString())
         .map(rel => rel.category_id);
 
       return {
         ...productObj,
-        category_ids: matchedCategories // <--- Đính kèm mảng ID vào đây cho Frontend dùng
+        category_ids: matchedCategories
       };
     });
 
@@ -51,20 +43,18 @@ const getProductById = async (req, res) => {
 // 3. TIẾP NHẬN YÊU CẦU THÊM SÁCH MỚI TỪ ADMIN (HỖ TRỢ MẢNG DANH MỤC)
 const createProduct = async (req, res) => {
   try {
-    // Đón nhận dữ liệu, chuyển từ trường đơn category_id sang mảng category_ids
     const { 
       title, 
       price, 
       tax_rate, 
       stock_quantity, 
-      category_ids, // <--- Nhận mảng ID danh mục từ Modal mới gửi lên
+      category_ids, 
       cover_image,
       author,
       description,
       rating
     } = req.body;
 
-    // Kiểm tra điều kiện bắt buộc cơ bản
     if (!title || price === undefined || price === null) {
       return res.status(400).json({ success: false, message: "Tựa đề và giá sách không được để trống!" });
     }
@@ -73,13 +63,12 @@ const createProduct = async (req, res) => {
       return res.status(400).json({ success: false, message: "Sản phẩm phải thuộc ít nhất một danh mục hợp lệ!" });
     }
 
-    // Gọi hàm tạo tích hợp đa danh mục từ Model xuống Postgres
     const newProduct = await Product.create({
       title,
       price,
       tax_rate,
       stock_quantity,
-      category_ids, // <--- Truyền mảng đi xuống Model xử lý tiếp
+      category_ids, 
       cover_image,
       author,
       description,
@@ -98,25 +87,118 @@ const createProduct = async (req, res) => {
   }
 };
 
+// 4. LẤY SẢN PHẨM LIÊN QUAN
 const getRelatedProducts = async (req, res) => {
   const { id } = req.params;
-
   try {
-    // 💡 Gọi hàm từ tầng Model đã khai báo ở trên
     const data = await Product.getRelated(id);
-
-    return res.status(200).json({
-      success: true,
-      data: data
-    });
+    return res.status(200).json({ success: true, data });
   } catch (error) {
     console.error("🔥 Lỗi tại getRelatedProducts Controller:", error.message);
-    return res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 
-// Nhớ thêm getRelatedProducts vào module.exports ở cuối file nhé!
-module.exports = { getAllProducts, getProductById, createProduct, getRelatedProducts };
+// 5. CẬP NHẬT SẢN PHẨM (ADMIN) - ĐÃ ĐỒNG BỘ THAM SỐ SQL & BẢNG TRUNG GIAN
+const updateProduct = async (req, res) => {
+  const { id } = req.params;
+  const { title, author, price, description, stock_quantity, cover_image, category_id, category_ids } = req.body;
+
+  try {
+    const productId = parseInt(id, 10);
+    if (isNaN(productId)) {
+      return res.status(400).json({ success: false, message: "ID sản phẩm không hợp lệ." });
+    }
+
+    // Câu lệnh SQL chỉ chứa 7 tham số ($1 -> $7) tương ứng với các cột có thật trong bảng products
+    const sql = `
+      UPDATE products 
+      SET title = $1, author = $2, price = $3, description = $4, 
+          stock_quantity = $5, cover_image = $6
+      WHERE id = $7
+      RETURNING *
+    `;
+    
+    // Đã loại bỏ phần tử thừa, mảng values bây giờ có đúng 7 phần tử khớp hoàn toàn với câu lệnh SQL
+    const values = [title, author, price, description, stock_quantity, cover_image, productId];
+    const result = await pool.query(sql, values);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm để cập nhật." });
+    }
+
+    // --- XỬ LÝ ĐỒNG BỘ DANH MỤC SẢN PHẨM SANG BẢNG TRUNG GIAN ---
+    // Hỗ trợ cả trường hợp FE truyền mảng category_ids hoặc chỉ truyền một số category_id lẻ
+    const finalCategoryIds = category_ids || (category_id ? [category_id] : []);
+    
+    if (finalCategoryIds.length > 0) {
+      // BƯỚC A: Xóa toàn bộ liên kết thể loại cũ của cuốn sách này
+      await pool.query('DELETE FROM product_categories WHERE product_id = $1', [productId]);
+      
+      // BƯỚC B: Chèn lại danh sách thể loại mới vào bảng trung gian
+      for (const catId of finalCategoryIds) {
+        if (catId) {
+          await pool.query(
+            'INSERT INTO product_categories (product_id, category_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [productId, catId]
+          );
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Cập nhật thông tin sản phẩm và thể loại thành công!",
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error("❌ Lỗi chi tiết tại updateProduct:", error.message);
+    return res.status(500).json({ success: false, message: "Lỗi hệ thống khi cập nhật sản phẩm." });
+  }
+};
+
+// 6. XÓA SẢN PHẨM (ADMIN)
+const deleteProduct = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const productId = parseInt(id, 10);
+    if (isNaN(productId)) {
+      return res.status(400).json({ success: false, message: "ID sản phẩm không hợp lệ." });
+    }
+
+    // Trước khi xóa sản phẩm, cần xóa liên kết của nó trong bảng trung gian để tránh dính khóa ngoại
+    await pool.query('DELETE FROM product_categories WHERE product_id = $1', [productId]);
+
+    const sql = `DELETE FROM products WHERE id = $1 RETURNING id`;
+    const result = await pool.query(sql, [productId]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm hoặc sản phẩm đã bị xóa trước đó." });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Xóa sản phẩm thành công!"
+    });
+  } catch (error) {
+    console.error("❌ Lỗi deleteProduct:", error.message);
+    if (error.code === '23503') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Không thể xóa sản phẩm này vì đã có dữ liệu đánh giá hoặc đơn hàng liên quan!" 
+      });
+    }
+    return res.status(500).json({ success: false, message: "Lỗi hệ thống khi xóa sản phẩm." });
+  }
+};
+
+// 💥 ĐỒNG BỘ EXPORT: Xuất tất cả các hàm thông qua object duy nhất
+module.exports = { 
+  getAllProducts, 
+  getProductById, 
+  createProduct, 
+  getRelatedProducts, 
+  updateProduct, 
+  deleteProduct 
+};

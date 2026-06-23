@@ -19,6 +19,9 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import MenuPage from './pages/MenuPage';
 import OrderHistoryPage from './pages/OrderHistoryPage';
 
+// Import các Pages Admin
+import AdminProductPage from './pages/AdminProductPage';
+
 // Import Services
 import { cartService, productService } from './services/api';
 
@@ -140,6 +143,8 @@ function App() {
                 />
               } 
             />
+
+            <Route path="/admin/products" element={<AdminProductPage />} />
           </Routes>
         </main>
 

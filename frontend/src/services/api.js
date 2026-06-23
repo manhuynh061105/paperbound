@@ -24,6 +24,8 @@ export const productService = {
   getRelated: (id) => API.get(`/products/${id}/related`), 
   // ✅ ĐÃ SỬA: Thay 'axios.get' thành 'API.get' để chạy đúng URL Backend
   getReviews: (productId) => API.get(`/products/${productId}/reviews`),
+  update: (id, data) => API.put(`/products/${id}`, data),
+  delete: (id) => API.delete(`/products/${id}`),
 };
 
 // 3. DỊCH VỤ GIỎ HÀNG

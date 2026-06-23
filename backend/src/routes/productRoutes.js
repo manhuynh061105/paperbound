@@ -14,5 +14,7 @@ router.get('/:id', productController.getProductById);
 
 // 4. Tuyến đường ghi dữ liệu - Dành riêng cho Admin thêm sản phẩm (POST /api/products)
 router.post('/', productController.createProduct);
+router.put('/:id', productController.updateProduct);
+router.delete('/:id', productController.deleteProduct);
 
 module.exports = router;
