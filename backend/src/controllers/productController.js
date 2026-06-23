@@ -193,6 +193,66 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const getDashboardStats = async (req, res) => {
+  try {
+    // 1. Tính tổng doanh thu: 
+    // Mẹo: Đổi thành ILIKE hoặc thêm các trạng thái thực tế trong DB của bạn (ví dụ: 'Đã thanh toán', 'Thành công', 'completed')
+    const totalRevenueQuery = `
+      SELECT SUM(total_amount) as total 
+      FROM orders 
+      WHERE status IN ('completed', 'delivered', 'Thành công', 'Đã thanh toán', 'Đã giao hàng')
+         OR status ILIKE '%thành%' 
+         OR status ILIKE '%thanh%'
+    `;
+    
+    // 2. Tính tổng số lượng đầu sách
+    const totalProductsQuery = `SELECT COUNT(*) as total FROM products`;
+    
+    // 3. Tính tổng số lượng đơn hàng (Đếm toàn bộ đơn hàng trong hệ thống)
+    const totalOrdersQuery = `SELECT COUNT(*) as total FROM orders`;
+
+    // 4. Lấy dữ liệu doanh thu theo tháng cho biểu đồ
+    const revenueChartQuery = `
+      SELECT 
+        TO_CHAR(created_at, 'MM/YYYY') as month_year,
+        SUM(total_amount) as monthly_revenue,
+        COUNT(id) as order_count
+      FROM orders
+      WHERE status IN ('completed', 'delivered', 'Thành công', 'Đã thanh toán', 'Đã giao hàng')
+         OR status ILIKE '%thành%' 
+         OR status ILIKE '%thanh%'
+         AND created_at >= DATE_TRUNC('year', CURRENT_DATE)
+      GROUP BY TO_CHAR(created_at, 'MM/YYYY'), DATE_TRUNC('month', created_at)
+      ORDER BY DATE_TRUNC('month', created_at) ASC
+    `;
+
+    // Thực thi song song
+    const [revRes, prodRes, orderRes, chartRes] = await Promise.all([
+      pool.query(totalRevenueQuery),
+      pool.query(totalProductsQuery),
+      pool.query(totalOrdersQuery),
+      pool.query(revenueChartQuery)
+    ]);
+
+    // Trả dữ liệu về cho Frontend
+    res.status(200).json({
+      success: true,
+      data: {
+        summary: {
+          totalRevenue: Number(revRes.rows[0]?.total || 0),
+          totalProducts: Number(prodRes.rows[0]?.total || 0),
+          totalOrders: Number(orderRes.rows[0]?.total || 0)
+        },
+        chartData: chartRes.rows || []
+      }
+    });
+  } catch (error) {
+    console.error("❌ Lỗi chi tiết tại getDashboardStats Backend:", error.message);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống khi tải thống kê." });
+  }
+};
+
+
 // 💥 ĐỒNG BỘ EXPORT: Xuất tất cả các hàm thông qua object duy nhất
 module.exports = { 
   getAllProducts, 
@@ -200,5 +260,6 @@ module.exports = {
   createProduct, 
   getRelatedProducts, 
   updateProduct, 
-  deleteProduct 
+  deleteProduct,
+  getDashboardStats 
 };

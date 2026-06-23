@@ -26,6 +26,7 @@ export const productService = {
   getReviews: (productId) => API.get(`/products/${productId}/reviews`),
   update: (id, data) => API.put(`/products/${id}`, data),
   delete: (id) => API.delete(`/products/${id}`),
+  getDashboardStats: () => API.get('/products/dashboard/stats'),
 };
 
 // 3. DỊCH VỤ GIỎ HÀNG
@@ -61,3 +62,4 @@ export const reviewService = {
   // 💥 ĐÃ BỔ SUNG: Lấy danh sách nhận xét kèm ảnh từ Backend theo đúng mẫu Route mới
   getByProductId: (productId) => API.get(`/reviews/${productId}/reviews`),
 };
+

@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const logger = require('./src/middleware/loggerMiddleware');
 const productRoutes = require('./src/routes/productRoutes');
-const orderRoutes = require('./src/routes/orderRoutes');
+const orderRoutes = require('./src/routes/orderRoutes'); // Chuẩn hóa require tập trung ở đây
 const cartRoutes = require('./src/routes/cartRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const aiChatRoutes = require('./src/routes/aiChatRoutes');
@@ -13,11 +13,17 @@ require('dotenv').config();
 const app = express();
 
 // =========================================================
-// MIDDLEWARE CONFIGURATION (CẤU HÌNH FIX LỖI 413)
+// MIDDLEWARE CONFIGURATION (CẤU HÌNH HỆ THỐNG)
 // =========================================================
-app.use(cors()); // Cho phép Frontend gọi API từ port khác
 
-// Thay thế app.use(express.json()) cũ bằng phiên bản mở rộng 50MB để nhận chuỗi ảnh đại diện Base64
+// Tối ưu CORS: Cho phép nhận payload lớn mượt mà, không bị nghẽn mạch mã hóa
+app.use(cors({
+  origin: '*', // Hoặc điền chính xác URL frontend của bạn ví dụ: 'http://localhost:3000'
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Giới hạn 50MB xử lý hoàn hảo chuỗi ảnh đại diện & ảnh bìa Base64
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -27,7 +33,7 @@ app.use(logger);
 // DEFINING API ROUTES (ĐỊNH NGHĨA TUYẾN ĐƯỜNG)
 // =========================================================
 app.use('/api/products', productRoutes);
-app.use('/api/orders', require('./src/routes/orderRoutes'));
+app.use('/api/orders', orderRoutes); // Đã sửa: Sử dụng trực tiếp biến biến orderRoutes đã khai báo phía trên
 app.use('/api/cart', cartRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai-chat', aiChatRoutes);
@@ -39,13 +45,10 @@ app.get('/', (req, res) => {
   res.json({ message: "Welcome to Paperbound API" });
 });
 
-// *LƯU Ý: Các API lấy sản phẩm viết trực tiếp ở đây đã được lược bỏ 
-// vì nó đã được quản lý tập trung và đồng bộ trong file `./src/routes/productRoutes` của nhóm.
-
 // =========================================================
 // START SERVER (KHỞI CHẠY)
 // =========================================================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server Paperbound đang chạy mượt mà tại port: ${PORT}`);
+  console.log(`🚀 Server Paperbound đang chạy mượt mành tại port: ${PORT}`);
 });

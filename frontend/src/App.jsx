@@ -21,6 +21,7 @@ import OrderHistoryPage from './pages/OrderHistoryPage';
 
 // Import các Pages Admin
 import AdminProductPage from './pages/AdminProductPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 // Import Services
 import { cartService, productService } from './services/api';
@@ -145,6 +146,7 @@ function App() {
             />
 
             <Route path="/admin/products" element={<AdminProductPage />} />
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           </Routes>
         </main>
 
