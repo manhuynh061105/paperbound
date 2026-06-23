@@ -13,9 +13,14 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "^2.9.0",
+    "@google/generative-ai": "^0.24.1",
+    "@huggingface/inference": "^4.13.19",
+    "@langchain/community": "^1.1.29",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "langchain": "^1.5.1",
     "multer": "^2.2.0",
     "pg": "^8.20.0"
   }

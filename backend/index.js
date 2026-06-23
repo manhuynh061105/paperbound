@@ -1,14 +1,20 @@
+// =========================================================
+// KHỞI TẠO BIẾN MÔI TRƯỜNG (PHẢI ĐẶT Ở DÒNG SỐ 1)
+// =========================================================
+require('dotenv').config(); // Giúp nạp API_KEY từ .env trước khi các controller dịch mã
+
 const express = require('express');
 const cors = require('cors');
 const logger = require('./src/middleware/loggerMiddleware');
+
+// Import các Tuyến đường API (Routes)
 const productRoutes = require('./src/routes/productRoutes');
-const orderRoutes = require('./src/routes/orderRoutes'); // Chuẩn hóa require tập trung ở đây
+const orderRoutes = require('./src/routes/orderRoutes'); 
 const cartRoutes = require('./src/routes/cartRoutes');
 const userRoutes = require('./src/routes/userRoutes');
-const aiChatRoutes = require('./src/routes/aiChatRoutes');
+const aiChatRoutes = require('./src/routes/aiChatRoutes'); // Đã sửa đường dẫn có /src/ chuẩn
 const categoryRoutes = require('./src/routes/categoryRoutes');
 const reviewRoutes = require('./src/routes/reviewRoutes');
-require('dotenv').config();
 
 const app = express();
 
@@ -16,14 +22,14 @@ const app = express();
 // MIDDLEWARE CONFIGURATION (CẤU HÌNH HỆ THỐNG)
 // =========================================================
 
-// Tối ưu CORS: Cho phép nhận payload lớn mượt mà, không bị nghẽn mạch mã hóa
+// Cấu hình CORS đặt lên hàng đầu để tránh lỗi chặn kết nối từ Frontend
 app.use(cors({
-  origin: '*', // Hoặc điền chính xác URL frontend của bạn ví dụ: 'http://localhost:3000'
+  origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Giới hạn 50MB xử lý hoàn hảo chuỗi ảnh đại diện & ảnh bìa Base64
+// Giới hạn xử lý chuỗi dữ liệu lớn (Base64)
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -33,10 +39,10 @@ app.use(logger);
 // DEFINING API ROUTES (ĐỊNH NGHĨA TUYẾN ĐƯỜNG)
 // =========================================================
 app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes); // Đã sửa: Sử dụng trực tiếp biến biến orderRoutes đã khai báo phía trên
+app.use('/api/orders', orderRoutes); 
 app.use('/api/cart', cartRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/ai-chat', aiChatRoutes);
+app.use('/api/ai', aiChatRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/reviews', reviewRoutes);
 
@@ -50,5 +56,5 @@ app.get('/', (req, res) => {
 // =========================================================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server Paperbound đang chạy mượt mành tại port: ${PORT}`);
+  console.log(`🚀 Server Paperbound đang chạy mượt mà tại port: ${PORT}`);
 });
