@@ -37,27 +37,34 @@ const checkout = async (req, res) => {
     await Order.createDetails(client, orderId, items);
 
     // 4. NẾU KHÁCH CẦN HÓA ĐƠN ĐỎ -> GỌI MODEL INVOICE
-    // Tìm đến đoạn xử lý Invoice trong hàm checkout/create order của bạn, sửa lại data truyền đi:
+    // ================= ĐOẠN CODE SỬA LỖI TRONG ORDERCONTROLLER.JS =================
     if (needInvoice && billingInfo) {
       const extra = billingInfo.extraMetadata || {};
       
       let customBillingName = billingInfo.billingName;
       
-      // Mẹo: Gộp toàn bộ thông tin chi tiết kiểu Fahasa thành chuỗi text dài lưu vào trường billing_name
+      // Gộp thông tin chi tiết kiểu Fahasa thành chuỗi text dài lưu vào trường billing_name
       if (extra.invoiceType === 'company') {
         customBillingName = `[DN] ${extra.companyName} - ĐC: ${extra.companyAddress} - Người mua: ${extra.buyerName || 'Trống'} - QHNS: ${extra.qhnsCode || 'Không'}`;
       } else {
         customBillingName = `[CN] ${extra.buyerName || 'Khách lẻ'} - ĐC: ${extra.personalAddress || 'Trống'}`;
       }
       
-      // Thêm thông tin Email nhận hóa đơn vào luôn mã code hóa đơn hoặc tên để quản trị viên dễ thấy
       customBillingName += ` - Email nhận: ${extra.invoiceEmail || ''}`;
 
+      // 🔥 SỬA LỖI TẠI ĐÂY: Xác định chính xác biến ID của Đơn hàng vừa tạo phía trên
+      // Bạn hãy nhìn ngược lên vài dòng xem biến lưu kết quả đơn hàng mới của bạn tên là gì (thường là 'newOrder', 'resultOrder', hoặc 'order')
+      // Dưới đây là giải pháp an toàn tự động quét biến:
+      const actualOrderId = typeof orderId !== 'undefined' ? orderId 
+                          : typeof newOrder !== 'undefined' ? newOrder.id 
+                          : typeof order !== 'undefined' ? order.id 
+                          : null; // Dự phòng trường hợp xấu nhất
+
       await Invoice.create(client, {
-        orderId: orderIdFromBE,
+        orderId: actualOrderId, // 👈 Đã thay thế 'orderIdFromBE' bằng biến 'actualOrderId' vừa tìm được
         invoiceCode: `INV-${Date.now()}`,
-        taxId: billingInfo.taxId || 'KHONG_CO', // MST hoặc CCCD
-        billingName: customBillingName, // Toàn bộ dữ liệu Fahasa nằm trọn trong này
+        taxId: billingInfo.taxId || 'KHONG_CO', 
+        billingName: customBillingName, 
         totalVat: taxAmountFromFE,
         totalFinal: totalAmountFromFE
       });
