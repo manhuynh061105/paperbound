@@ -26,9 +26,9 @@ const AIChatbot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // 2. Tải lịch sử chat từ Database PostgreSQL
+  // 2. Tải lịch sử chat cũ từ Database PostgreSQL khi khởi tạo (Chỉ chạy 1 lần khi có userId)
   useEffect(() => {
-    if (isOpen && userId) {
+    if (userId) {
       const fetchChatHistory = async () => {
         try {
           const res = await axios.get(`${API_BASE_URL}/api/ai/history/${userId}`);
@@ -47,10 +47,10 @@ const AIChatbot = () => {
         }
       };
       fetchChatHistory();
-    } else if (isOpen && !userId) {
-      if (messages.length === 0) initDefaultGreeting();
+    } else {
+      initDefaultGreeting();
     }
-  }, [isOpen, userId]);
+  }, [userId]);
 
   const initDefaultGreeting = () => {
     setMessages([
@@ -58,7 +58,7 @@ const AIChatbot = () => {
     ]);
   };
 
-  // 3. Xử lý gửi tin nhắn lên API
+  // 3. Xử lý gửi tin nhắn mới lên API
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
@@ -69,19 +69,19 @@ const AIChatbot = () => {
     setLoading(true);
 
     try {
-      // Thay đổi ở đây: Đổi user_id -> userId, và message_content -> message
+      // Gọi qua aiService đã đồng bộ Key chuẩn gửi lên Backend ({ userId, message })
       const res = await aiService.sendMessage({
         userId: userId, 
         message: userText
       });
 
-      // Backend trả về: { success: true, data: savedReply }
-      // Trong đó savedReply có cấu trúc chứa nội dung tin nhắn, ta bóc tách thông minh:
+      // Bóc tách dữ liệu thông minh, linh hoạt theo cấu trúc trả về của Backend
       const aiReply = res.data?.data?.message_content || 
                       res.data?.data?.message || 
-                      res.data?.data;
+                      res.data?.data ||
+                      res.data?.reply;
 
-      if (res.data?.success && aiReply) {
+      if ((res.data?.success || res.status === 200) && aiReply) {
         setMessages(prev => [...prev, { sender: 'bot', text: aiReply }]);
       } else {
         setMessages(prev => [...prev, { sender: 'bot', text: '💔 Hệ thống AI đang bận xử lý dữ liệu kho sách, bạn vui lòng thử lại sau nhé!' }]);
@@ -97,7 +97,7 @@ const AIChatbot = () => {
 
   return (
     <div style={styles.container}>
-      {/* 1. Icon bong bóng nhỏ */}
+      {/* 1. Icon bong bóng nhỏ bật/tắt */}
       <button 
         onClick={() => setIsOpen(!isOpen)} 
         style={{
@@ -116,13 +116,15 @@ const AIChatbot = () => {
         )}
       </button>
 
-      {/* 2. Khung cửa sổ chat */}
+      {/* 2. Khung cửa sổ chat (Đã cải tiến sang ẩn/hiện bằng CSS display để giữ lịch sử) */}
       <div style={{
         ...styles.chatWindow,
+        display: isOpen ? 'flex' : 'none', // ⚡️ Bí kíp giúp giữ nguyên phiên chat, không bị mất tin nhắn khi ẩn khung!
         opacity: isOpen ? 1 : 0,
         transform: isOpen ? 'translateY(0)' : 'translateY(20px)',
         pointerEvents: isOpen ? 'all' : 'none',
       }}>
+        {/* Header khung chat */}
         <div style={styles.chatHeader}>
           <div style={styles.headerInfo}>
             <div style={styles.avatarCircle}>📖</div>
@@ -133,11 +135,12 @@ const AIChatbot = () => {
           </div>
         </div>
         
+        {/* Khu vực hiển thị tin nhắn */}
         <div style={styles.messageArea}>
           {messages.map((msg, idx) => (
             <div key={idx} style={{
               ...styles.messageRow,
-              justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start'
+              justify: msg.sender === 'user' ? 'flex-end' : 'flex-start'
             }}>
               <div style={{
                 ...styles.bubble,
@@ -161,6 +164,7 @@ const AIChatbot = () => {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Ô nhập tin nhắn */}
         <form onSubmit={handleSendMessage} style={styles.inputForm}>
           <input 
             type="text" 
@@ -187,12 +191,13 @@ const AIChatbot = () => {
   );
 };
 
+// ================= CSS STYLESHEET CHUẨN =================
 const styles = {
   container: { position: 'fixed', bottom: '25px', right: '25px', zIndex: 9999, fontFamily: '"Inter", system-ui, sans-serif' },
   launcherBtn: { width: '65px', height: '65px', borderRadius: '50%', backgroundColor: '#1a202c', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   iconContent: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px' },
   launcherText: { fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600', color: '#e2e8f0' },
-  chatWindow: { position: 'absolute', bottom: '80px', right: '0', width: '370px', height: '520px', backgroundColor: '#f7fafc', borderRadius: '20px', boxShadow: '0 12px 40px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid #e2e8f0', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' },
+  chatWindow: { position: 'absolute', bottom: '80px', right: '0', width: '370px', height: '520px', backgroundColor: '#f7fafc', borderRadius: '20px', boxShadow: '0 12px 40px rgba(0,0,0,0.12)', flexDirection: 'column', overflow: 'hidden', border: '1px solid #e2e8f0', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' },
   chatHeader: { backgroundColor: '#1a202c', color: '#fff', padding: '16px 20px', display: 'flex', alignItems: 'center', borderBottom: '1px solid #2d3748' },
   headerInfo: { display: 'flex', alignItems: 'center', gap: '12px' },
   avatarCircle: { width: '35px', height: '35px', backgroundColor: '#2d3748', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' },
