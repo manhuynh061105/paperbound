@@ -1,7 +1,10 @@
 const pool = require('../config/db');
 const User = require('../models/User');
+const bcrypt = require('bcrypt'); // ⚡️ Import thư viện mã hóa mật khẩu
 
-// 1. ĐĂNG KÝ TÀI KHOẢN
+const SALT_ROUNDS = 10; // Số vòng lặp băm dữ liệu (tiêu chuẩn bảo mật)
+
+// 1. ĐĂNG KÝ TÀI KHOẢN (Có mã hóa)
 const register = async (req, res) => {
   try {
     const { full_name, email, password, phone } = req.body;
@@ -11,30 +14,44 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email đã tồn tại trên hệ thống!" });
     }
 
-    const newUser = await User.create({ full_name, email, password, phone });
+    // 🔥 Tiến hành mã hóa mật khẩu trước khi ném vào database
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+    const newUser = await User.create({ 
+      full_name, 
+      email, 
+      password: hashedPassword, // Lưu mật khẩu đã mã hóa
+      phone 
+    });
+
     res.status(201).json({ success: true, data: newUser });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// 2. ĐĂNG NHẬP HỆ THỐNG
+// 2. ĐĂNG NHẬP HỆ THỐNG (Có giải mã đối chiếu)
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findByEmail(email);
 
-    if (!user || user.password !== password) { 
+    if (!user) {
       return res.status(401).json({ success: false, message: "Email hoặc mật khẩu không chính xác!" });
     }
 
-    // Cập nhật để trả về đầy đủ avatar và phone phục vụ lưu Session ở Frontend
+    // 🔥 Sử dụng bcrypt.compare để đối chiếu mật khẩu thuần nhập vào với chuỗi hash trong DB
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Email hoặc mật khẩu không chính xác!" });
+    }
+
     res.status(200).json({ 
       success: true, 
       message: "Đăng nhập thành công!", 
       user: { 
         id: user.id, 
-        name: user.full_name, // Khớp với trường 'name' ở state Frontend chúng ta vừa làm
+        name: user.full_name,
         email: user.email, 
         phone: user.phone,
         role: user.role,
@@ -46,10 +63,10 @@ const login = async (req, res) => {
   }
 };
 
-// 3. BỔ SUNG: LẤY THÔNG TIN PROFILE CHI TIẾT
+// 3. LẤY THÔNG TIN PROFILE CHI TIẾT
 const getProfile = async (req, res) => {
   try {
-    const { id } = req.params; // Lấy ID của User từ URL (Ví dụ: /api/users/profile/1)
+    const { id } = req.params;
     const user = await User.findById(id);
     
     if (!user) {
@@ -62,33 +79,32 @@ const getProfile = async (req, res) => {
   }
 };
 
-// 4. BỔ SUNG: CẬP NHẬT THÔNG TIN PROFILE & AVATAR
+// 4. CẬP NHẬT THÔNG TIN PROFILE & ĐỔI MẬT KHẨU (Có mã hóa)
 const updateProfile = async (req, res) => {
   try {
     const { id } = req.params;
     const { full_name, phone, avatar, current_password, new_password } = req.body;
 
-    // 1. Kiểm tra User có tồn tại trong hệ thống không
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ success: false, message: "Không tìm thấy người dùng!" });
     }
 
-    // 2. Xử lý logic Đổi mật khẩu nếu người dùng yêu cầu
-    let finalPassword = current_password; // Mặc định nếu không truyền mật khẩu mới thì giữ nguyên pass cũ
-    
-    // Nếu trong DB bạn lưu trường mật khẩu, cần lấy đầy đủ ra để đối chiếu lúc đổi pass
     const fullUserDetail = await User.findByEmail(user.email);
-    finalPassword = fullUserDetail.password; // Lấy pass hiện tại trong DB làm gốc
+    let finalPassword = fullUserDetail.password; // Mặc định giữ nguyên pass cũ đã hash trong DB
 
+    // Nếu người dùng có nhu cầu đổi mật khẩu mới
     if (new_password) {
-      if (fullUserDetail.password !== current_password) {
+      // 🔥 Xác thực mật khẩu hiện tại bằng bcrypt.compare
+      const isCurrentMatch = await bcrypt.compare(current_password, fullUserDetail.password);
+      if (!isCurrentMatch) {
         return res.status(400).json({ success: false, message: "Mật khẩu hiện tại không chính xác!" });
       }
-      finalPassword = new_password; // Chấp nhận ghi đè mật khẩu mới
+      
+      // 🔥 Mã hóa mật khẩu mới trước khi lưu
+      finalPassword = await bcrypt.hash(new_password, SALT_ROUNDS);
     }
 
-    // 3. FIX LỖI: Sử dụng trực tiếp `pool.query` đã import ở đầu file để thực thi câu lệnh SQL
     const query = `
       UPDATE users 
       SET full_name = $1, phone = $2, avatar = $3, password = $4
@@ -96,10 +112,8 @@ const updateProfile = async (req, res) => {
       RETURNING id, full_name, email, phone, role, avatar, created_at
     `;
     const result = await pool.query(query, [full_name, phone, avatar, finalPassword, id]); 
-    
     const updatedUser = result.rows[0];
 
-    // 4. Trả về kết quả khớp với Session cấu trúc ở Frontend
     res.status(200).json({ 
       success: true, 
       message: "Cập nhật hồ sơ thành công!", 
@@ -118,5 +132,4 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// EXPORT ĐẦY ĐỦ CẢ 4 BIẾN RA NGOÀI
 module.exports = { register, login, getProfile, updateProfile };
