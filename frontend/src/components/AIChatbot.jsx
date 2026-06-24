@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { aiService } from '../services/api';
 
 // ====================================================================
 // 💡 CẤU HÌNH ĐƯỜNG DẪN API AN TOÀN TUYỆT ĐỐI CHO VITE (KHÔNG DÙNG BIẾN PROCESS)
@@ -68,19 +69,38 @@ const AIChatbot = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/ai/send`, {
-        userId: userId,
-        message: userText
+      // 1. Gửi dữ liệu chuẩn lên Backend thông qua aiService tập trung
+      const res = await aiService.sendMessage({
+        user_id: userId,
+        message_content: userText
       });
 
-      if (res.data.success) {
-        setMessages(prev => [...prev, { sender: 'bot', text: res.data.data.message_content }]);
+      // 2. Bóc tách dữ liệu thông minh (Phòng trường hợp cấu hình Backend trả về các kiểu data khác nhau)
+      // Check theo thứ tự ưu tiên: cấu trúc của bạn -> res.data.reply -> res.data.data -> chính res.data (chuỗi thuần)
+      const aiReply = res.data?.data?.message_content || 
+                      res.data?.reply || 
+                      res.data?.data || 
+                      (typeof res.data === 'string' ? res.data : null);
+
+      // 3. Kiểm tra xem có lấy được nội dung câu trả lời từ AI hay không
+      if (aiReply || res.data?.success) {
+        setMessages(prev => [
+          ...prev, 
+          { 
+            sender: 'bot', 
+            text: aiReply || '🤖 Mình đã nhận được tín hiệu nhưng chưa phản hồi được chữ, bạn thử hỏi câu khác xem sao nhé!' 
+          }
+        ]);
       } else {
-        setMessages(prev => [...prev, { sender: 'bot', text: '💔 Hệ thống AI đang bận, bạn vui lòng thử lại sau nhé!' }]);
+        // Trường hợp Backend trả về status 200 nhưng không kèm nội dung hoặc báo success: false
+        setMessages(prev => [...prev, { sender: 'bot', text: '💔 Hệ thống AI đang bận xử lý dữ liệu kho sách, bạn vui lòng thử lại sau nhé!' }]);
       }
     } catch (error) {
-      console.error("Lỗi kết nối AI:", error);
-      setMessages(prev => [...prev, { sender: 'bot', text: '😥 Kết nối máy chủ AI thất bại. Vui lòng kiểm tra lại kết nối mạng!' }]);
+      console.error("❌ Lỗi kết nối AI tại Frontend:", error);
+      
+      // Bắt các lỗi phân quyền, token hoặc sai route cụ thể để hiển thị thông báo chính xác
+      const errorMsg = error.response?.data?.message || '😥 Kết nối máy chủ AI thất bại. Vui lòng kiểm tra lại kết nối mạng!';
+      setMessages(prev => [...prev, { sender: 'bot', text: errorMsg }]);
     } finally {
       setLoading(false);
     }

@@ -63,3 +63,13 @@ export const reviewService = {
   getByProductId: (productId) => API.get(`/reviews/${productId}/reviews`),
 };
 
+// Thêm vào cuối file api.js ở Frontend của bạn:
+
+// 7. DỊCH VỤ AI CHATBOT
+export const aiService = {
+  // Gửi tin nhắn mới lên AI (Khớp chính xác với router.post('/send'))
+  sendMessage: (data) => API.post('/ai/send', data),
+
+  // Lấy lịch sử chat cũ (Khớp chính xác với router.get('/history/:userId'))
+  getHistory: (userId) => API.get(`/ai/history/${userId}`),
+};
