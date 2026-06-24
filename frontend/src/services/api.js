@@ -8,6 +8,28 @@ const API = axios.create({
   }
 });
 
+// =========================================================================
+// 🔑 BỘ CHẶN AXIOS INTERCEPTOR: TỰ ĐỘNG ĐÍNH KÈM JWT TOKEN VÀO TIÊU ĐỀ REQUEST
+// =========================================================================
+API.interceptors.request.use(
+  (config) => {
+    // Tìm kiếm chuỗi token đã lưu từ AuthPage tại localStorage của trình duyệt
+    const token = localStorage.getItem('token');
+    
+    // Nếu có mã token (tức là người dùng đã đăng nhập thành công)
+    if (token) {
+      // Đính kèm Token theo chuẩn Bearer được authMiddleware ở Backend chờ đợi
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+// =========================================================================
+
 // 1. DỊCH VỤ USER
 export const userService = {
   register: (data) => API.post('/users/register', data),
@@ -22,7 +44,6 @@ export const productService = {
   getById: (id) => API.get(`/products/${id}`),
   create: (data) => API.post('/products', data), 
   getRelated: (id) => API.get(`/products/${id}/related`), 
-  // ✅ ĐÃ SỬA: Thay 'axios.get' thành 'API.get' để chạy đúng URL Backend
   getReviews: (productId) => API.get(`/products/${productId}/reviews`),
   update: (id, data) => API.put(`/products/${id}`, data),
   delete: (id) => API.delete(`/products/${id}`),
@@ -41,7 +62,7 @@ export const cartService = {
 export const orderService = {
   create: (data) => API.post('/orders/checkout', data),
   getByUserId: (userId) => API.get(`/orders/user/${userId}`),
-  updateStatus: (orderId, data) => API.put(`/orders/${orderId}/status`, data),
+  updateStatus: (orderId, data) => API.put('/orders/' + orderId + '/status', data),
 };
 
 // 5. DỊCH VỤ DANH MỤC
@@ -59,11 +80,9 @@ export const reviewService = {
     }
   }),
 
-  // 💥 ĐÃ BỔ SUNG: Lấy danh sách nhận xét kèm ảnh từ Backend theo đúng mẫu Route mới
+  // Lấy danh sách nhận xét kèm ảnh từ Backend theo đúng mẫu Route mới
   getByProductId: (productId) => API.get(`/reviews/${productId}/reviews`),
 };
-
-// Thêm vào cuối file api.js ở Frontend của bạn:
 
 // 7. DỊCH VỤ AI CHATBOT
 export const aiService = {
