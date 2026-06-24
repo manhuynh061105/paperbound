@@ -199,25 +199,33 @@ const OrderHistoryPage = () => {
               <h3 style={styles.emptyCardTitle}>Chưa có đơn hàng nào</h3>
               <p style={styles.emptyCardSub}>Có vẻ như bạn chưa thưởng thức sản phẩm nào của chúng tôi rồi!</p>
               <button style={styles.orderNowBtn} onClick={() => navigate('/products')}>
-                ĐẶT MÓN NGAY
+                ĐẶT SÁCH NGAY
               </button>
             </div>
           ) : (
             orders.map((order) => (
               <div key={order.id} style={styles.orderCard}>
-                {/* Header đơn hàng */}
-                <div style={styles.orderHeader}>
-                  <div>
-                    <span style={styles.orderIdText}>Mã đơn hàng: #{order.id}</span>
-                    <span style={styles.orderDate}>
-                      📅 {order.created_at ? new Date(order.created_at).toLocaleString('vi-VN') : 'Chưa rõ'}
-                    </span>
+                {/* Footer đơn hàng */}
+                <div style={styles.orderFooter}>
+                  <div style={styles.totalBlock}>
+                    Tổng tiền thanh toán: <span style={styles.totalPrice}>{Number(order.total_amount).toLocaleString()} đ</span>
                   </div>
-                  <span style={styles.statusBadge(order.status)}>
-                    {order.status === 'pending' && '⏳ Chờ xử lý'}
-                    {order.status === 'completed' && '✅ Đã giao thành công'}
-                    {order.status === 'cancelled' && '🛑 Đã hủy'}
-                  </span>
+                  
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    {/* Nút Hủy Đơn: Hiển thị khi đơn ở trạng thái chờ xử lý (Bỏ chặn 2 giờ để tiện kiểm thử) */}
+                    {(order.status?.toLowerCase() === 'pending') && (
+                      <button onClick={() => triggerActionModal('cancel', order.id)} style={styles.cancelBtn}>
+                        Hủy đơn hàng
+                      </button>
+                    )}
+                    
+                    {/* Nút Đã Nhận Hàng: Hiển thị khi đơn hàng đang xử lý, đang giao hoặc thậm chí là chờ xử lý để test nhanh */}
+                    {(order.status?.toLowerCase() === 'pending' || order.status?.toLowerCase() === 'shipping' || order.status?.toLowerCase() === 'processing') && (
+                      <button onClick={() => triggerActionModal('confirm', order.id)} style={styles.confirmBtn}>
+                        Đã nhận hàng
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Danh sách sản phẩm */}
