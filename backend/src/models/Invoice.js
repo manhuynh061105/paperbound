@@ -2,16 +2,13 @@ const pool = require('../config/db');
 
 const Invoice = {
   create: async (client, invoiceData) => {
-    // metadata dùng để lưu chuỗi JSON gom tất cả các trường không bắt buộc (Email, Địa chỉ, QHNS...)
-    const { orderId, invoiceCode, taxId, billingName, totalVat, totalFinal, metadata } = invoiceData;
+    // Không dùng biến 'metadata' riêng nữa
+    const { orderId, invoiceCode, taxId, billingName, totalVat, totalFinal } = invoiceData;
     
-    // Bạn có thể chạy lệnh SQL này trong pgAdmin trước để thêm cột nếu chưa có: 
-    // ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_metadata TEXT;
-
+    // Đưa câu lệnh về đúng 6 cột nguyên thủy trong cơ sở dữ liệu cũ của bạn
     const result = await client.query(
-      `INSERT INTO invoices (order_id, invoice_code, tax_id, billing_name, total_vat, total_final, invoice_metadata) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [orderId, invoiceCode, taxId, billingName, totalVat, totalFinal, metadata ? JSON.stringify(metadata) : null]
+      'INSERT INTO invoices (order_id, invoice_code, tax_id, billing_name, total_vat, total_final) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [orderId, invoiceCode, taxId, billingName, totalVat, totalFinal]
     );
     return result.rows[0];
   }

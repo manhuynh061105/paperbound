@@ -37,17 +37,31 @@ const checkout = async (req, res) => {
     await Order.createDetails(client, orderId, items);
 
     // 4. NẾU KHÁCH CẦN HÓA ĐƠN ĐỎ -> GỌI MODEL INVOICE
+    // Tìm đến đoạn xử lý Invoice trong hàm checkout/create order của bạn, sửa lại data truyền đi:
     if (needInvoice && billingInfo) {
+      const extra = billingInfo.extraMetadata || {};
+      
+      let customBillingName = billingInfo.billingName;
+      
+      // Mẹo: Gộp toàn bộ thông tin chi tiết kiểu Fahasa thành chuỗi text dài lưu vào trường billing_name
+      if (extra.invoiceType === 'company') {
+        customBillingName = `[DN] ${extra.companyName} - ĐC: ${extra.companyAddress} - Người mua: ${extra.buyerName || 'Trống'} - QHNS: ${extra.qhnsCode || 'Không'}`;
+      } else {
+        customBillingName = `[CN] ${extra.buyerName || 'Khách lẻ'} - ĐC: ${extra.personalAddress || 'Trống'}`;
+      }
+      
+      // Thêm thông tin Email nhận hóa đơn vào luôn mã code hóa đơn hoặc tên để quản trị viên dễ thấy
+      customBillingName += ` - Email nhận: ${extra.invoiceEmail || ''}`;
+
       await Invoice.create(client, {
-        orderId,
-        invoiceCode: `INV-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        taxId: billingInfo.taxId,
-        billingName: billingInfo.billingName,
-        totalVat: taxAmount,
-        totalFinal: totalAmount
+        orderId: orderIdFromBE,
+        invoiceCode: `INV-${Date.now()}`,
+        taxId: billingInfo.taxId || 'KHONG_CO', // MST hoặc CCCD
+        billingName: customBillingName, // Toàn bộ dữ liệu Fahasa nằm trọn trong này
+        totalVat: taxAmountFromFE,
+        totalFinal: totalAmountFromFE
       });
     }
-
     // 5. ĐẶT HÀNG THÀNH CÔNG -> DỌN SẠCH GIỎ HÀNG CỦA USER
     await Order.clearCart(client, Number(userId));
 
