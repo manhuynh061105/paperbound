@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/orderController');
+const verifyToken = require('../middleware/authMiddleware'); // 🔑 Import middleware
 
-// 💡 Chạy trực tiếp qua đối tượng orderController gom gọn
-router.post('/checkout', orderController.checkout); 
-router.get('/user/:userId', orderController.getOrdersByUserId);
-router.put('/:orderId/status', orderController.updateOrderStatus);
+// Khách hàng phải đăng nhập mới được Checkout và xem lịch sử đơn của mình
+router.post('/checkout', verifyToken, orderController.checkout); 
+router.get('/user/:userId', verifyToken, orderController.getOrdersByUserId);
+
+// Route thay đổi trạng thái đơn hàng (Thường dành cho Admin hoặc nội bộ hệ thống)
+router.put('/:orderId/status', verifyToken, orderController.updateOrderStatus);
 
 module.exports = router;

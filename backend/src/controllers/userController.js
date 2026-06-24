@@ -1,10 +1,12 @@
 const pool = require('../config/db');
 const User = require('../models/User');
-const bcrypt = require('bcrypt'); // ⚡️ Import thư viện mã hóa mật khẩu
+const bcrypt = require('bcrypt'); 
+const jwt = require('jsonwebtoken'); // 🔑 Import thư viện JWT Token
 
-const SALT_ROUNDS = 10; // Số vòng lặp băm dữ liệu (tiêu chuẩn bảo mật)
+const SALT_ROUNDS = 10; 
+const JWT_SECRET = process.env.JWT_SECRET || 'PAPERBOUND_SUPER_SECRET_KEY_2026'; // Khóa bí mật để ký token (dùng cho đồ án)
 
-// 1. ĐĂNG KÝ TÀI KHOẢN (Có mã hóa)
+// 1. ĐĂNG KÝ TÀI KHOẢN (Có mã hóa + Sinh JWT Token)
 const register = async (req, res) => {
   try {
     const { full_name, email, password, phone } = req.body;
@@ -14,23 +16,34 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email đã tồn tại trên hệ thống!" });
     }
 
-    // 🔥 Tiến hành mã hóa mật khẩu trước khi ném vào database
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     const newUser = await User.create({ 
       full_name, 
       email, 
-      password: hashedPassword, // Lưu mật khẩu đã mã hóa
+      password: hashedPassword, 
       phone 
     });
 
-    res.status(201).json({ success: true, data: newUser });
+    // 🔑 Tạo JWT Token cho người dùng mới đăng ký
+    const token = jwt.sign(
+      { id: newUser.id, role: newUser.role }, 
+      JWT_SECRET, 
+      { expiresIn: '7d' } // Token có giá trị trong 7 ngày
+    );
+
+    res.status(201).json({ 
+      success: true, 
+      message: "Đăng ký thành công!",
+      token, // 👈 Trả token về Frontend
+      data: newUser 
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// 2. ĐĂNG NHẬP HỆ THỐNG (Có giải mã đối chiếu)
+// 2. ĐĂNG NHẬP HỆ THỐNG (Đối chiếu mật khẩu + Sinh JWT Token)
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -40,15 +53,22 @@ const login = async (req, res) => {
       return res.status(401).json({ success: false, message: "Email hoặc mật khẩu không chính xác!" });
     }
 
-    // 🔥 Sử dụng bcrypt.compare để đối chiếu mật khẩu thuần nhập vào với chuỗi hash trong DB
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: "Email hoặc mật khẩu không chính xác!" });
     }
 
+    // 🔑 Tạo JWT Token khi đăng nhập thành công
+    const token = jwt.sign(
+      { id: user.id, role: user.role }, 
+      JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
+
     res.status(200).json({ 
       success: true, 
       message: "Đăng nhập thành công!", 
+      token, // 👈 Trả token về để Frontend lưu lại quyền truy cập
       user: { 
         id: user.id, 
         name: user.full_name,
@@ -79,7 +99,7 @@ const getProfile = async (req, res) => {
   }
 };
 
-// 4. CẬP NHẬT THÔNG TIN PROFILE & ĐỔI MẬT KHẨU (Có mã hóa)
+// 4. CẬP NHẬT THÔNG TIN PROFILE & ĐỔI MẬT KHẨU
 const updateProfile = async (req, res) => {
   try {
     const { id } = req.params;
@@ -91,17 +111,13 @@ const updateProfile = async (req, res) => {
     }
 
     const fullUserDetail = await User.findByEmail(user.email);
-    let finalPassword = fullUserDetail.password; // Mặc định giữ nguyên pass cũ đã hash trong DB
+    let finalPassword = fullUserDetail.password;
 
-    // Nếu người dùng có nhu cầu đổi mật khẩu mới
     if (new_password) {
-      // 🔥 Xác thực mật khẩu hiện tại bằng bcrypt.compare
       const isCurrentMatch = await bcrypt.compare(current_password, fullUserDetail.password);
       if (!isCurrentMatch) {
         return res.status(400).json({ success: false, message: "Mật khẩu hiện tại không chính xác!" });
       }
-      
-      // 🔥 Mã hóa mật khẩu mới trước khi lưu
       finalPassword = await bcrypt.hash(new_password, SALT_ROUNDS);
     }
 
