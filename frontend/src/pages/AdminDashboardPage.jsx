@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { productService } from '../services/api';
 import { toast } from 'react-toastify';
+// 1. Import trực tiếp component AddProductModal vào đây
+import AddProductModal from './AddProductModal'; 
 
 const AdminDashboardPage = () => {
   const [stats, setStats] = useState({
@@ -8,6 +10,9 @@ const AdminDashboardPage = () => {
     chartData: []
   });
   const [loading, setLoading] = useState(true);
+  
+  // 2. Tạo State quản lý việc hiển thị Modal Thêm sản phẩm
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -27,48 +32,30 @@ const AdminDashboardPage = () => {
     fetchStats();
   }, []);
 
-const handleTriggerHeaderAddBtn = () => {
-  const allButtons = document.querySelectorAll('button');
-  let adminMenuBtn = null;
-
-  allButtons.forEach(btn => {
-    if (btn.textContent.toLowerCase().includes('quản lý')) {
-      adminMenuBtn = btn;
-    }
-  });
-
-  if (adminMenuBtn) {
-    const mouseEnterEvent = new MouseEvent('mouseenter', { bubbles: true, cancelable: true });
-    adminMenuBtn.dispatchEvent(mouseEnterEvent);
-
-    setTimeout(() => {
-      const elements = document.querySelectorAll('div, button');
-      let clicked = false;
-
-      elements.forEach(el => {
-        if (el.textContent.toLowerCase().includes('thêm sản phẩm mới')) {
-          el.click();
-          clicked = true;
+  // 3. Hàm xử lý khi bấm nút "Xác nhận thêm" từ Modal gửi dữ liệu lên Server
+  const handleAddProductSubmit = async (newProductData) => {
+    try {
+      // Gọi API thêm sản phẩm từ productService của bạn
+      const response = await productService.create(newProductData);
+      if (response?.data?.success || response?.status === 200 || response?.status === 201) {
+        toast.success("🎉 Thêm đầu sách mới thành công!");
+        
+        // Load lại số liệu thống kê để cập nhật "Tổng Đầu Sách Trong Kho" tăng lên
+        const refreshRes = await productService.getDashboardStats();
+        if (refreshRes?.data?.success) {
+          setStats(refreshRes.data.data);
         }
-      });
-
-      const mouseLeaveEvent = new MouseEvent('mouseleave', { bubbles: true, cancelable: true });
-      adminMenuBtn.parentElement?.dispatchEvent(mouseLeaveEvent);
-
-      if (!clicked) {
-        toast.info("💡 Hệ thống đang điều hướng tới bảng thêm sách!");
       }
-    }, 50);
-
-  } else {
-    toast.error("❌ Không tìm thấy bảng điều khiển trên thanh Header!");
-  }
-};
+    } catch (error) {
+      console.error("❌ Lỗi khi thêm sản phẩm:", error);
+      toast.error(error.response?.data?.message || "Không thể thêm sách mới, vui lòng thử lại!");
+    }
+  };
 
   const handlePrintReport = () => {
     toast.success("⏳ Đang chuẩn bị bản in báo cáo kinh doanh...");
     setTimeout(() => {
-      window.print(); 
+      window.print();
     }, 800);
   };
 
@@ -170,13 +157,15 @@ const handleTriggerHeaderAddBtn = () => {
           <div style={styles.contentCard}>
             <h4 style={styles.cardTitle}>⚡ Thao tác nhanh hệ thống</h4>
             <div style={styles.quickActionsList}>
+              {/* 4. Đổi sự kiện onClick để đổi trạng thái state mở Modal lên */}
               <button 
                 type="button" 
                 style={styles.actionBtn} 
-                onClick={handleTriggerHeaderAddBtn}
+                onClick={() => setIsAddModalOpen(true)}
               >
                 ➕ Thêm đầu sách mới
               </button>
+              
               <button 
                 type="button" 
                 style={styles.actionBtnOutline} 
@@ -211,6 +200,13 @@ const handleTriggerHeaderAddBtn = () => {
         </div>
       </div>
 
+      {/* 5. Khai báo Modal nằm ở đây để nhận lệnh đóng mở từ trang Dashboard */}
+      <AddProductModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onAdd={handleAddProductSubmit} 
+      />
+
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -222,252 +218,43 @@ const handleTriggerHeaderAddBtn = () => {
   );
 };
 
+// ... Toàn bộ hệ thống styles phía dưới giữ nguyên như cũ của bạn ...
 const styles = {
-  container: { 
-    padding: '40px 15px 80px 15px', 
-    backgroundColor: '#F8FAFC', 
-    minHeight: '100vh', 
-    maxWidth: '1200px',
-    margin: '0 auto',
-    fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-    boxSizing: 'border-box'
-  },
-  mainHeader: { 
-    marginBottom: '32px' 
-  },
-  pageTitle: { 
-    margin: 0, 
-    fontSize: '24px', 
-    fontWeight: '700', 
-    color: '#2C3E50', 
-    letterSpacing: '0.3px' 
-  },
-  pageSubtitle: { 
-    margin: '6px 0 0 0', 
-    fontSize: '14px', 
-    color: '#64748B' 
-  },
-  kpiGrid: { 
-    display: 'grid', 
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-    gap: '24px', 
-    marginBottom: '32px' 
-  },
-  kpiCard: { 
-    backgroundColor: '#ffffff', 
-    padding: '24px', 
-    borderRadius: '12px', 
-    boxShadow: '0 4px 20px rgba(0,0,0,0.01)', 
-    border: '1px solid #E2E8F0',
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '20px' 
-  },
-  kpiIconBox: { 
-    width: '54px', 
-    height: '54px', 
-    borderRadius: '10px', 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    fontSize: '22px' 
-  },
-  kpiLabel: { 
-    fontSize: '12px', 
-    fontWeight: '700', 
-    color: '#64748B', 
-    textTransform: 'uppercase', 
-    letterSpacing: '0.5px', 
-    marginBottom: '4px' 
-  },
-  kpiValue: { 
-    fontSize: '20px', 
-    fontWeight: '700', 
-    letterSpacing: '-0.3px' 
-  },
-  dashboardGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1.5fr 1fr',
-    gap: '24px',
-    alignItems: 'start'
-  },
-  chartSectionCard: { 
-    backgroundColor: '#ffffff', 
-    padding: '30px', 
-    borderRadius: '12px', 
-    boxShadow: '0 4px 20px rgba(0,0,0,0.01)',
-    border: '1px solid #E2E8F0'
-  },
-  chartTitle: { 
-    margin: 0, 
-    fontSize: '16px', 
-    fontWeight: '700', 
-    color: '#2C3E50' 
-  },
-  chartSubtitle: { 
-    margin: '6px 0 0 0', 
-    fontSize: '13.5px', 
-    color: '#64748B' 
-  },
-  emptyChart: { 
-    padding: '80px 0', 
-    textAlign: 'center', 
-    color: '#94A3B8' 
-  },
-  chartContainer: { 
-    height: '320px', 
-    display: 'flex', 
-    flexDirection: 'column', 
-    justifyContent: 'flex-end', 
-    borderBottom: '2px solid #E2E8F0', 
-    paddingBottom: '6px' 
-  },
-  chartBarsArea: { 
-    display: 'flex', 
-    justifyContent: 'space-around', 
-    alignItems: 'flex-end', 
-    height: '100%', 
-    width: '100%' 
-  },
-  chartColumnWrapper: { 
-    display: 'flex', 
-    flexDirection: 'column', 
-    alignItems: 'center', 
-    width: '50px', 
-    height: '100%', 
-    justifyContent: 'flex-end', 
-    gap: '8px', 
-    position: 'relative' 
-  },
-  barTooltip: { 
-    fontSize: '11px', 
-    fontWeight: '700', 
-    color: '#475569', 
-    backgroundColor: '#F1F5F9', 
-    padding: '4px 6px', 
-    borderRadius: '4px', 
-    whiteSpace: 'nowrap'
-  },
-  chartBar: { 
-    width: '100%', 
-    background: 'linear-gradient(180deg, #E67E22 0%, #F39C12 100%)', 
-    borderRadius: '6px 6px 0 0', 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'flex-start', 
-    paddingTop: '6px', 
-    transition: 'all 0.4s ease-in-out',
-    boxShadow: '0 4px 10px rgba(230,126,34,0.15)'
-  },
-  orderCountBadge: { 
-    fontSize: '9px', 
-    fontWeight: '700', 
-    color: '#ffffff', 
-    backgroundColor: 'rgba(0,0,0,0.15)', 
-    padding: '2px 4px', 
-    borderRadius: '4px', 
-    whiteSpace: 'nowrap' 
-  },
-  chartXLabel: { 
-    fontSize: '12px', 
-    fontWeight: '600', 
-    color: '#64748B', 
-    marginTop: '6px', 
-    whiteSpace: 'nowrap' 
-  },
-  sideSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px'
-  },
-  contentCard: {
-    backgroundColor: '#ffffff',
-    padding: '24px',
-    borderRadius: '12px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.01)',
-    border: '1px solid #E2E8F0'
-  },
-  cardTitle: {
-    margin: '0 0 16px 0',
-    fontSize: '14.5px',
-    fontWeight: '700',
-    color: '#2C3E50'
-  },
-  quickActionsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-  actionBtn: {
-    width: '100%',
-    backgroundColor: '#E67E22',
-    color: '#ffffff',
-    border: 'none',
-    padding: '12px',
-    borderRadius: '8px',
-    fontWeight: '600',
-    fontSize: '13.5px',
-    cursor: 'pointer',
-    transition: 'opacity 0.2s',
-    outline: 'none'
-  },
-  actionBtnOutline: {
-    width: '100%',
-    backgroundColor: 'transparent',
-    color: '#475569',
-    border: '1px solid #CBD5E1',
-    padding: '11px',
-    borderRadius: '8px',
-    fontWeight: '600',
-    fontSize: '13.5px',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    outline: 'none'
-  },
-  progressContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px'
-  },
-  progressMeta: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '13px',
-    fontWeight: '600'
-  },
-  progressLabel: {
-    color: '#64748B'
-  },
-  progressValue: {
-    color: '#2C3E50'
-  },
-  progressBarBg: {
-    width: '100%',
-    height: '8px',
-    backgroundColor: '#F1F5F9',
-    borderRadius: '10px',
-    overflow: 'hidden'
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: '10px'
-  },
-  centerBox: { 
-    display: 'flex', 
-    flexDirection: 'column', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    minHeight: '60vh', 
-    gap: '16px' 
-  },
-  spinner: { 
-    width: '40px', 
-    height: '40px', 
-    border: '4px solid #E2E8F0', 
-    borderTop: '4px solid #E67E22', 
-    borderRadius: '50%', 
-    animation: 'spin 1s linear infinite' 
-  }
+  container: { padding: '40px 15px 80px 15px', backgroundColor: '#F8FAFC', minHeight: '100vh', maxWidth: '1200px', margin: '0 auto', fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif', boxSizing: 'border-box' },
+  mainHeader: { marginBottom: '32px' },
+  pageTitle: { margin: 0, fontSize: '24px', fontWeight: '700', color: '#2C3E50', letterSpacing: '0.3px' },
+  pageSubtitle: { margin: '6px 0 0 0', fontSize: '14px', color: '#64748B' },
+  kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' },
+  kpiCard: { backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.01)', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '20px' },
+  kpiIconBox: { width: '54px', height: '54px', borderRadius: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '22px' },
+  kpiLabel: { fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' },
+  kpiValue: { fontSize: '20px', fontWeight: '700', letterSpacing: '-0.3px' },
+  dashboardGrid: { display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px', alignItems: 'start' },
+  chartSectionCard: { backgroundColor: '#ffffff', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.01)', border: '1px solid #E2E8F0' },
+  chartTitle: { margin: 0, fontSize: '16px', fontWeight: '700', color: '#2C3E50' },
+  chartSubtitle: { margin: '6px 0 0 0', fontSize: '13.5px', color: '#64748B' },
+  emptyChart: { padding: '80px 0', textAlign: 'center', color: '#94A3B8' },
+  chartContainer: { height: '320px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', borderBottom: '2px solid #E2E8F0', paddingBottom: '6px' },
+  chartBarsArea: { display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', height: '100%', width: '100%' },
+  chartColumnWrapper: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '50px', height: '100%', justifyContent: 'flex-end', gap: '8px', position: 'relative' },
+  barTooltip: { fontSize: '11px', fontWeight: '700', color: '#475569', backgroundColor: '#F1F5F9', padding: '4px 6px', borderRadius: '4px', whiteSpace: 'nowrap' },
+  chartBar: { width: '100%', background: 'linear-gradient(180deg, #E67E22 0%, #F39C12 100%)', borderRadius: '6px 6px 0 0', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '6px', transition: 'all 0.4s ease-in-out', boxShadow: '0 4px 10px rgba(230,126,34,0.15)' },
+  orderCountBadge: { fontSize: '9px', fontWeight: '700', color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.15)', padding: '2px 4px', borderRadius: '4px', whiteSpace: 'nowrap' },
+  chartXLabel: { fontSize: '12px', fontWeight: '600', color: '#64748B', marginTop: '6px', whiteSpace: 'nowrap' },
+  sideSection: { display: 'flex', flexDirection: 'column', gap: '24px' },
+  contentCard: { backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.01)', border: '1px solid #E2E8F0' },
+  cardTitle: { margin: '0 0 16px 0', fontSize: '14.5px', fontWeight: '700', color: '#2C3E50' },
+  quickActionsList: { display: 'flex', flexDirection: 'column', gap: '12px' },
+  actionBtn: { width: '100%', backgroundColor: '#E67E22', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: '600', fontSize: '13.5px', cursor: 'pointer', transition: 'opacity 0.2s', outline: 'none' },
+  actionBtnOutline: { width: '100%', backgroundColor: 'transparent', color: '#475569', border: '1px solid #CBD5E1', padding: '11px', borderRadius: '8px', fontWeight: '600', fontSize: '13.5px', cursor: 'pointer', transition: 'background-color 0.2s', outline: 'none' },
+  progressContainer: { display: 'flex', padding: 0, flexDirection: 'column', gap: '6px' },
+  progressMeta: { display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: '600' },
+  progressLabel: { color: '#64748B' },
+  progressValue: { color: '#2C3E50' },
+  progressBarBg: { width: '100%', height: '8px', backgroundColor: '#F1F5F9', borderRadius: '10px', overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: '10px' },
+  centerBox: { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', gap: '16px' },
+  spinner: { width: '40px', height: '40px', border: '4px solid #E2E8F0', borderTop: '4px solid #E67E22', borderRadius: '50%', animation: 'spin 1s linear infinite' }
 };
 
 export default AdminDashboardPage;
