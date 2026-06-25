@@ -2,9 +2,19 @@ const pool = require('../config/db');
 
 const Cart = {
   // Lấy toàn bộ giỏ hàng của 1 user (kèm thông tin Product)
+  // Lấy toàn bộ giỏ hàng của 1 user (kèm thông tin Product)
   findByUserId: async (userId) => {
     const query = `
-      SELECT c.id, c.product_id, c.quantity, p.title, p.price, p.cover_image, p.tax_rate
+      SELECT 
+        c.id, 
+        c.product_id, 
+        c.quantity, 
+        p.title, 
+        p.price, 
+        p.cover_image, 
+        p.tax_rate,
+        p.author,
+        p.stock_quantity AS stock  -- 🌟 Đổi tên stock_quantity thành stock để khớp với Frontend
       FROM carts c
       JOIN products p ON c.product_id = p.id
       WHERE c.user_id = $1
@@ -36,7 +46,7 @@ const Cart = {
     `;
     const result = await pool.query(query, [userId, productId, quantity]);
     return result.rows[0];
-  }, // <--- CHÍNH LÀ DẤU PHẨY NÀY! Bạn đang bị thiếu ở đây
+  },
 
   // Xóa 1 sản phẩm khỏi giỏ
   removeItem: async (userId, productId) => {

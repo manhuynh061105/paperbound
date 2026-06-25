@@ -13,6 +13,9 @@ const OrderHistoryPage = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   
+  // 🌟 State mới dành cho việc xem hóa đơn
+  const [invoiceModal, setInvoiceModal] = useState({ isOpen: false, order: null });
+  
   const [rating, setRating] = useState(5);         
   const [hoverRating, setHoverRating] = useState(0);   
   
@@ -163,7 +166,7 @@ const OrderHistoryPage = () => {
               Lịch sử mua hàng
             </button>
             <button className="side-menu-hover" style={styles.sideMenuBtn} onClick={() => navigate('/products')}>
-              Tiếp tục mua sắm
+               Tiếp tục mua sắm
             </button>
           </div>
         </div>
@@ -242,6 +245,17 @@ const OrderHistoryPage = () => {
                   </div>
                   
                   <div style={{ display: 'flex', gap: '12px' }}>
+                    {/* 🌟 NÚT XEM HÓA ĐƠN: Hiện khi đơn hàng yêu cầu xuất hóa đơn */}
+                    {(order.has_invoice || order.invoice_requested) && (
+                      <button 
+                        className="invoice-btn-hover" 
+                        onClick={() => setInvoiceModal({ isOpen: true, order })} 
+                        style={styles.invoiceBtn}
+                      >
+                        🧾 Xem hóa đơn VAT
+                      </button>
+                    )}
+
                     {(order.status?.toLowerCase() === 'pending') && (
                       <button className="cancel-btn-hover" onClick={() => triggerActionModal('cancel', order.id)} style={styles.cancelBtn}>
                         Hủy đơn hàng
@@ -261,6 +275,7 @@ const OrderHistoryPage = () => {
         </div>
       </div>
 
+      {/* MODAL XÁC NHẬN HỦY / NHẬN HÀNG */}
       {confirmModal.isOpen && (
         <div style={styles.modalOverlay}>
           <div style={{...styles.modalContent, maxWidth: '440px', textAlign: 'center'}}>
@@ -290,6 +305,7 @@ const OrderHistoryPage = () => {
         </div>
       )}
 
+      {/* MODAL ĐÁNH GIÁ SẢN PHẨM */}
       {isReviewModalOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
@@ -300,10 +316,8 @@ const OrderHistoryPage = () => {
             <p style={{ margin: '0 0 20px 0', color: '#475569', fontSize: '14px' }}>Đang đánh giá: <b style={{color: '#2C3E50'}}>{selectedProduct?.title}</b></p>
             
             <form onSubmit={handleSubmitReview}>
-              
               <div style={{ marginBottom: '24px', textAlign: 'center', backgroundColor: '#FFF7ED', padding: '16px', borderRadius: '12px', border: '1px solid #FFEDD5' }}>
                 <label style={{...styles.label, marginBottom: '8px', textAlign: 'center'}}>Mức độ hài lòng của bạn:</label>
-                
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
                   {[1, 2, 3, 4, 5].map((index) => {
                     const activeStar = index <= (hoverRating || rating);
@@ -326,7 +340,6 @@ const OrderHistoryPage = () => {
                     );
                   })}
                 </div>
-                
                 <div style={{ marginTop: '10px', fontSize: '13px', color: '#E67E22', fontWeight: '600' }}>
                   {(hoverRating || rating)} / 5 Sao - {
                     (hoverRating || rating) === 5 ? 'Tuyệt vời cực kỳ!' :
@@ -356,6 +369,93 @@ const OrderHistoryPage = () => {
           </div>
         </div>
       )}
+
+      {invoiceModal.isOpen && invoiceModal.order && (
+        <div style={styles.modalOverlay}>
+          <div style={{ ...styles.modalContent, maxWidth: '580px', padding: '0px', overflow: 'hidden', borderRadius: '12px' }}>
+            
+            <div style={{ backgroundColor: '#1E293B', color: '#ffffff', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', letterSpacing: '0.5px' }}>🧾 HÓA ĐƠN ĐIỆN TỬ GIÁ TRỊ GIA TĂNG</h3>
+                <small style={{ color: '#94A3B8' }}>
+                  Mã số hóa đơn: {invoiceModal.order.invoice_code || `INV-${invoiceModal.order.id}`}
+                </small>
+              </div>
+              <span style={{ cursor: 'pointer', fontSize: '22px', color: '#94A3B8' }} onClick={() => setInvoiceModal({ isOpen: false, order: null })}>✕</span>
+            </div>
+
+            <div style={{ padding: '24px', maxHeight: '70vh', overflowY: 'auto', backgroundColor: '#F8FAFC' }}>
+              <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '2px dashed #CBD5E1', paddingBottom: '16px' }}>
+                <h2 style={{ margin: '0 0 6px 0', fontSize: '20px', color: '#0F172A', fontWeight: '800' }}>CÔNG TY CỔ PHẦN PHÁT HÀNH SÁCH PAPERBOUND</h2>
+                <p style={{ margin: 0, fontSize: '13px', color: '#64748B' }}>Địa chỉ: 123 Đường Lê Lợi, Hải Châu, Đà Nẵng</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748B' }}>Mã số thuế: 0102345678</p>
+              </div>
+
+              <div style={{ marginBottom: '20px', fontSize: '14px', color: '#334155', backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#1E293B', borderBottom: '1px solid #F1F5F9', paddingBottom: '6px' }}>Thông tin khách hàng:</h4>
+                
+                <p style={{ margin: '0 0 6px 0' }}>
+                  <b>Đơn vị mua hàng:</b> {invoiceModal.order.billing_name || username}
+                </p>
+                
+                <p style={{ margin: '0 0 6px 0' }}>
+                  <b>Mã số thuế:</b> {invoiceModal.order.tax_id || 'Khách hàng cá nhân'}
+                </p>
+                
+                <p style={{ margin: '0 0 6px 0' }}>
+                  <b>Hình thức thanh toán:</b> {invoiceModal.order.payment_method === 'cod' ? 'Tiền mặt (COD)' : 'Chuyển khoản / Ví điện tử'}
+                </p>
+                <p style={{ margin: 0 }}>
+                  <b>Ngày lập hóa đơn:</b> {invoiceModal.order.created_at ? new Date(invoiceModal.order.created_at).toLocaleDateString('vi-VN') : 'Đang cập nhật'}
+                </p>
+              </div>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#ffffff', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E2E8F0', fontSize: '13.5px', marginBottom: '20px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#E2E8F0', color: '#1E293B', fontWeight: '700', textAlign: 'left' }}>
+                    <th style={{ padding: '10px 12px' }}>Tên mặt hàng (Sách)</th>
+                    <th style={{ padding: '10px 12px', width: '50px', textAlign: 'center' }}>SL</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Đơn giá</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Thành tiền</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceModal.order.products?.map((prod, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '10px 12px', color: '#334155', fontWeight: '500' }}>{prod.title}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center', color: '#475569' }}>{prod.quantity}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: '#475569' }}>{Number(prod.price).toLocaleString()}đ</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '600', color: '#1E293B' }}>{(Number(prod.price) * prod.quantity).toLocaleString()}đ</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end', fontSize: '14px', color: '#475569' }}>
+                <div>Tiền hàng tạm tính: <strong style={{ color: '#1E293B' }}>{Number(invoiceModal.order.subtotal || (invoiceModal.order.total_amount * 0.95)).toLocaleString()} đ</strong></div>
+                <div>Thuế giá trị gia tăng (VAT 5%): <strong style={{ color: '#1E293B' }}>{Number(invoiceModal.order.tax_amount || (invoiceModal.order.total_amount * 0.05)).toLocaleString()} đ</strong></div>
+                {invoiceModal.order.shipping_fee !== undefined && (
+                  <div>Phí vận chuyển: <strong style={{ color: '#1E293B' }}>{invoiceModal.order.shipping_fee === 0 ? 'Miễn phí' : `${Number(invoiceModal.order.shipping_fee).toLocaleString()} đ`}</strong></div>
+                )}
+                <div style={{ borderTop: '2px solid #CBD5E1', paddingTop: '10px', marginTop: '4px', fontSize: '16px', fontWeight: '700', color: '#E67E22' }}>
+                  Tổng cộng tiền thanh toán: <span>{Number(invoiceModal.order.total_amount).toLocaleString()} đ</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: '#F1F5F9', padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #E2E8F0' }}>
+              <button 
+                className="confirm-btn-hover" 
+                onClick={() => window.print()} 
+                style={{ ...styles.confirmBtn, backgroundColor: '#10B981', marginRight: '10px' }}
+              >
+                🖨️ In hóa đơn này
+              </button>
+              <button className="secondary-btn-hover" onClick={() => setInvoiceModal({ isOpen: false, order: null })} style={styles.modalCloseBtn}>Đóng cửa sổ</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -367,6 +467,7 @@ const hoverEffectsCSS = `
   .review-btn-hover:hover { background-color: #E67E22 !important; color: #fff !important; }
   .cancel-btn-hover:hover { background-color: #FEF2F2 !important; border-color: #EF4444 !important; }
   .confirm-btn-hover:hover { background-color: #1A252F !important; box-shadow: 0 4px 12px rgba(44,62,80,0.25) !important; }
+  .invoice-btn-hover:hover { background-color: #334155 !important; color: #ffffff !important; border-color: #334155 !important; }
   .action-btn-hover:hover { filter: brightness(0.9); }
 `;
 
@@ -414,6 +515,7 @@ const styles = {
   orderFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #F1F5F9' },
   totalBlock: { fontSize: '14.5px', color: '#475569', fontWeight: '500' },
   totalPrice: { fontSize: '20px', fontWeight: '800', color: '#E67E22', marginLeft: '6px' },
+  invoiceBtn: { backgroundColor: '#ffffff', border: '1px solid #94A3B8', color: '#475569', padding: '10px 18px', borderRadius: '8px', fontSize: '13.5px', cursor: 'pointer', fontWeight: '600', transition: 'all 0.2s' },
   cancelBtn: { backgroundColor: '#ffffff', border: '1px solid #F3F4F6', color: '#EF4444', padding: '10px 20px', borderRadius: '8px', fontSize: '13.5px', cursor: 'pointer', fontWeight: '600', transition: 'all 0.2s' },
   confirmBtn: { backgroundColor: '#2C3E50', color: '#ffffff', border: 'none', padding: '10px 22px', borderRadius: '8px', fontSize: '13.5px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 4px 10px rgba(44,62,80,0.15)', transition: 'all 0.2s' },
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, backdropFilter: 'blur(4px)' },

@@ -73,7 +73,7 @@ const CartPage = ({ refreshCartCount }) => {
 
   const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
   const taxAmount = subtotal * 0.05; 
-  const shippingFee = cartItems.length > 0 ? 20000 : 0; 
+  const shippingFee = subtotal > 300000 || cartItems.length === 0 ? 0 : 30000; 
   const totalAmount = subtotal + taxAmount + shippingFee;
 
   const handleProceedToCheckout = () => {
@@ -199,7 +199,9 @@ const CartPage = ({ refreshCartCount }) => {
             </div>
             <div style={styles.summaryRow}>
               <span>Phí vận chuyển toàn quốc:</span>
-              <span style={styles.valueText}>{shippingFee.toLocaleString()} đ</span>
+              <span style={{ ...styles.valueText, color: shippingFee === 0 ? '#10B981' : '#1E293B' }}>
+                {shippingFee === 0 ? 'Miễn phí' : `${shippingFee.toLocaleString()} đ`}
+              </span>
             </div>
             
             <hr style={styles.divider} />
