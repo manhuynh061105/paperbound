@@ -13,6 +13,7 @@ const CheckoutPage = ({ refreshCartCount }) => {
 
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState(null);
 
   const [shippingInfo, setShippingInfo] = useState({
@@ -168,20 +169,7 @@ const CheckoutPage = ({ refreshCartCount }) => {
   };
 
   const handlePrintMockInvoice = () => {
-    const title = invoiceType === 'company' ? 'HÓA ĐƠN ĐIỆN TỬ DOANH NGHIỆP' : 'HÓA ĐƠN ĐIỆN TỬ CÁ NHÂN';
-    const targetName = invoiceType === 'company' ? billingInfo.companyName : (billingInfo.buyerName || shippingInfo.fullName);
-    const targetId = invoiceType === 'company' ? billingInfo.taxId : billingInfo.idCard;
-
-    alert(`
-      --- 📝 ${title} PAPERBOUND ---
-      Mã đơn hàng: #DH${createdOrderId}
-      Đơn vị/Người mua: ${targetName}
-      MST/CCCD: ${targetId || 'Không cung cấp'}
-      Email nhận: ${billingInfo.invoiceEmail}
-      -----------------------------------------
-      Tổng tiền thanh toán (gồm VAT): ${finalTotal.toLocaleString('vi-VN')} đ
-      👉 [Hệ thống đồ án]: Hóa đơn điện tử đã gửi về email ${billingInfo.invoiceEmail} thành công!
-    `);
+    setIsInvoiceModalOpen(true);
   };
 
   if (loading) {
@@ -346,6 +334,67 @@ const CheckoutPage = ({ refreshCartCount }) => {
             <div style={{display: 'flex', gap: '16px'}}>
               <button onClick={() => navigate('/')} style={styles.backHomeBtn}>🏠 Về trang chủ</button>
               <button onClick={() => navigate('/orders-history')} style={styles.viewOrdersBtn}>📦 Xem lịch sử đơn</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isInvoiceModalOpen && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.invoiceModalContainer}>
+            <div style={styles.invoicePaperHeader}>
+              <div style={{fontSize: '24px', marginBottom: '4px'}}>📝</div>
+              <h3 style={styles.invoicePaperTitle}>
+                {invoiceType === 'company' ? 'HÓA ĐƠN ĐIỆN TỬ DOANH NGHIỆP' : 'HÓA ĐƠN ĐIỆN TỬ CÁ NHÂN'}
+              </h3>
+              <p style={{color: '#E67E22', fontWeight: 'bold', margin: '4px 0 0 0', fontSize: '13px'}}>PAPERBOUND SYSTEM</p>
+            </div>
+
+            <div style={styles.invoicePaperBody}>
+              <div style={styles.invoiceDetailRow}>
+                <span style={styles.invoiceDetailLabel}>Mã đơn hàng:</span>
+                <span style={styles.invoiceDetailValue}>#DH{createdOrderId}</span>
+              </div>
+              <div style={styles.invoiceDetailRow}>
+                <span style={styles.invoiceDetailLabel}>Đơn vị/Người mua:</span>
+                <span style={styles.invoiceDetailValue}>
+                  {invoiceType === 'company' ? billingInfo.companyName : (billingInfo.buyerName || shippingInfo.fullName)}
+                </span>
+              </div>
+              <div style={styles.invoiceDetailRow}>
+                <span style={styles.invoiceDetailLabel}>{invoiceType === 'company' ? 'Mã số thuế (MST):' : 'Số CCCD/Hộ chiếu:'}</span>
+                <span style={styles.invoiceDetailValue}>
+                  {invoiceType === 'company' ? (billingInfo.taxId || 'Chưa cung cấp') : (billingInfo.idCard || 'Chưa cung cấp')}
+                </span>
+              </div>
+              {invoiceType === 'company' && billingInfo.companyAddress && (
+                <div style={styles.invoiceDetailRow}>
+                  <span style={styles.invoiceDetailLabel}>Địa chỉ DN:</span>
+                  <span style={styles.invoiceDetailValue}>{billingInfo.companyAddress}</span>
+                </div>
+              )}
+              <div style={styles.invoiceDetailRow}>
+                <span style={styles.invoiceDetailLabel}>Email nhận hóa đơn:</span>
+                <span style={styles.invoiceDetailValue} style={{color: '#E67E22', fontWeight: '500'}}>{billingInfo.invoiceEmail}</span>
+              </div>
+
+              <div style={styles.invoicePaperDivider}></div>
+
+              <div style={{...styles.invoiceDetailRow, marginTop: '5px'}}>
+                <span style={{...styles.invoiceDetailLabel, fontWeight: '700', color: '#1E293B'}}>TỔNG TIỀN (Gồm VAT):</span>
+                <span style={{fontSize: '18px', fontWeight: '700', color: '#E67E22'}}>
+                  {finalTotal.toLocaleString('vi-VN')} đ
+                </span>
+              </div>
+            </div>
+
+            <div style={styles.invoicePaperFooter}>
+              <p style={{margin: '0 0 16px 0', fontSize: '13px', color: '#15803D', fontWeight: '500'}}>
+                🎉 Hệ thống đồ án: Hóa đơn điện tử hợp lệ đã được khởi tạo và gửi thành công về email của bạn!
+              </p>
+              <button type="button" onClick={() => setIsInvoiceModalOpen(false)} style={styles.invoiceCloseBtn}>
+                Đóng cửa sổ kiểm tra
+              </button>
             </div>
           </div>
         </div>
@@ -840,6 +889,78 @@ const styles = {
     cursor: 'pointer', 
     boxShadow: '0 4px 12px rgba(44,62,80,0.15)',
     outline: 'none'
+  },
+
+  /* CÁC CSS STYLES CHO MODAL HOÁ ĐƠN MỚI */
+  invoiceModalContainer: {
+    backgroundColor: '#ffffff', 
+    padding: '35px 25px', 
+    borderRadius: '16px', 
+    width: '92%', 
+    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+    maxWidth: '520px', 
+    textAlign: 'center',
+    boxSizing: 'border-box'
+  },
+  invoicePaperHeader: {
+    borderBottom: '2px solid #E2E8F0',
+    paddingBottom: '16px',
+    marginBottom: '20px'
+  },
+  invoicePaperTitle: {
+    margin: '5px 0 0 0',
+    fontSize: '16px',
+    fontWeight: '700',
+    color: '#2C3E50',
+    letterSpacing: '0.5px'
+  },
+  invoicePaperBody: {
+    textAlign: 'left',
+    backgroundColor: '#FAFBFD',
+    border: '1px dashed #CBD5E1',
+    borderRadius: '10px',
+    padding: '20px',
+    marginBottom: '24px'
+  },
+  invoiceDetailRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '10px',
+    marginBottom: '12px',
+    fontSize: '13.5px',
+    lineHeight: '1.4'
+  },
+  invoiceDetailLabel: {
+    color: '#64748B',
+    fontWeight: '500',
+    whiteSpace: 'nowrap'
+  },
+  invoiceDetailValue: {
+    color: '#1E293B',
+    fontWeight: '600',
+    textAlign: 'right'
+  },
+  invoicePaperDivider: {
+    height: '1px',
+    borderTop: '1px dashed #CBD5E1',
+    margin: '16px 0'
+  },
+  invoicePaperFooter: {
+    textAlign: 'center'
+  },
+  invoiceCloseBtn: {
+    width: '100%',
+    backgroundColor: '#2C3E50',
+    color: '#ffffff',
+    border: 'none',
+    padding: '12px 0',
+    borderRadius: '8px',
+    fontWeight: '600',
+    fontSize: '14px',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+    boxShadow: '0 4px 12px rgba(44,62,80,0.1)'
   }
 };
 

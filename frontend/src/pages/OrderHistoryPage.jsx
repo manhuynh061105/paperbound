@@ -109,7 +109,7 @@ const OrderHistoryPage = () => {
       formData.append('comment', comment.trim());
       
       if (imageFile) {
-        formData.append('reviewImage', imageFile);
+        formData.append('review_image', imageFile); 
       }
 
       const res = await reviewService.create(formData);
@@ -174,7 +174,7 @@ const OrderHistoryPage = () => {
               <h3 style={styles.emptyCardTitle}>Chưa có đơn hàng nào</h3>
               <p style={styles.emptyCardSub}>Có vẻ như bạn chưa thưởng thức sản phẩm nào của chúng tôi rồi!</p>
               <button className="primary-btn-hover" style={styles.orderNowBtn} onClick={() => navigate('/products')}>
-                ĐẶT SÁCH NGAY
+                Đặt sách ngay
               </button>
             </div>
           ) : (
@@ -192,8 +192,8 @@ const OrderHistoryPage = () => {
                   <span style={styles.statusBadge(order.status?.toLowerCase())}>
                     {order.status === 'pending' ? '⏳ Chờ xử lý' : 
                      order.status === 'processing' ? '⚙️ Đang xử lý' :
-                     order.status === 'shipping' ? '🚚 Đang giao hàng' :
-                     order.status === 'completed' ? '✅ Thành công' : '❌ Đã hủy'}
+                     order.status === 'completed' ? '✅ Thành công' :
+                     order.status === 'cancelled' ? '❌ Đã hủy' : '🚚 Đang giao hàng'}
                   </span>
                 </div>
 
@@ -248,7 +248,7 @@ const OrderHistoryPage = () => {
                       </button>
                     )}
                     
-                    {(order.status?.toLowerCase() === 'pending' || order.status?.toLowerCase() === 'shipping' || order.status?.toLowerCase() === 'processing') && (
+                    {(order.status?.toLowerCase() !== 'completed' && order.status?.toLowerCase() !== 'cancelled') && (
                       <button className="confirm-btn-hover" onClick={() => triggerActionModal('confirm', order.id)} style={styles.confirmBtn}>
                         Đã nhận hàng
                       </button>
@@ -393,11 +393,16 @@ const styles = {
   orderHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px', marginBottom: '20px' },
   orderIdText: { fontSize: '15.5px', fontWeight: '700', color: '#2C3E50', marginRight: '16px' },
   orderDate: { fontSize: '13.5px', color: '#64748B' },
-  statusBadge: (status) => ({
-    padding: '6px 14px', borderRadius: '20px', fontSize: '12.5px', fontWeight: '700',
-    backgroundColor: status === 'pending' ? '#FEF3C7' : status === 'processing' ? '#E0F2FE' : status === 'shipping' ? '#E0E7FF' : status === 'completed' ? '#DCFCE7' : '#FEE2E2',
-    color: status === 'pending' ? '#B45309' : status === 'processing' ? '#0369A1' : status === 'shipping' ? '#4338CA' : status === 'completed' ? '#15803D' : '#B91C1C',
-  }),
+  statusBadge: (status) => {
+    const isStandardStatus = ['pending', 'processing', 'shipping', 'completed', 'cancelled'].includes(status);
+    const finalStatus = isStandardStatus ? status : 'shipping';
+    
+    return {
+      padding: '6px 14px', borderRadius: '20px', fontSize: '12.5px', fontWeight: '700',
+      backgroundColor: finalStatus === 'pending' ? '#FEF3C7' : finalStatus === 'processing' ? '#E0F2FE' : finalStatus === 'shipping' ? '#E0E7FF' : finalStatus === 'completed' ? '#DCFCE7' : '#FEE2E2',
+      color: finalStatus === 'pending' ? '#B45309' : finalStatus === 'processing' ? '#0369A1' : finalStatus === 'shipping' ? '#4338CA' : finalStatus === 'completed' ? '#15803D' : '#B91C1C',
+    };
+  },
   productContainer: { display: 'flex', flexDirection: 'column', gap: '16px' },
   productRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '16px' },
   productImg: { width: '60px', height: '80px', objectFit: 'cover', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
