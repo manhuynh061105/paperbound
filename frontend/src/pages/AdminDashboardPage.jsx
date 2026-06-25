@@ -27,34 +27,48 @@ const AdminDashboardPage = () => {
     fetchStats();
   }, []);
 
-  // Handler: Kích hoạt nút bấm thêm sản phẩm trên Header của hệ thống
-  const handleTriggerHeaderAddBtn = () => {
-    // Tìm tất cả các thẻ button hoặc thẻ có thuộc tính click trên giao diện
-    const elements = document.querySelectorAll('button, a, span, div');
-    let found = false;
+const handleTriggerHeaderAddBtn = () => {
+  const allButtons = document.querySelectorAll('button');
+  let adminMenuBtn = null;
 
-    // Quét tìm phần tử chứa từ khóa liên quan đến việc thêm sản phẩm trong header
-    elements.forEach((el) => {
-      const text = el.textContent || '';
-      if (
-        (text.toLowerCase().includes('thêm sản phẩm') || text.toLowerCase().includes('thêm sách')) &&
-        el.offsetWidth > 0 && el.offsetHeight > 0 // Đảm bảo phần tử đó đang hiển thị
-      ) {
-        el.click();
-        found = true;
-      }
-    });
-
-    if (!found) {
-      toast.info("💡 Hệ thống đang kích hoạt luồng thêm sách mới!");
+  allButtons.forEach(btn => {
+    if (btn.textContent.toLowerCase().includes('quản lý')) {
+      adminMenuBtn = btn;
     }
-  };
+  });
 
-  // Handler: Giả lập xuất/in báo cáo nhanh gọn để demo trước hội đồng
+  if (adminMenuBtn) {
+    const mouseEnterEvent = new MouseEvent('mouseenter', { bubbles: true, cancelable: true });
+    adminMenuBtn.dispatchEvent(mouseEnterEvent);
+
+    setTimeout(() => {
+      const elements = document.querySelectorAll('div, button');
+      let clicked = false;
+
+      elements.forEach(el => {
+        if (el.textContent.toLowerCase().includes('thêm sản phẩm mới')) {
+          el.click();
+          clicked = true;
+        }
+      });
+
+      const mouseLeaveEvent = new MouseEvent('mouseleave', { bubbles: true, cancelable: true });
+      adminMenuBtn.parentElement?.dispatchEvent(mouseLeaveEvent);
+
+      if (!clicked) {
+        toast.info("💡 Hệ thống đang điều hướng tới bảng thêm sách!");
+      }
+    }, 50);
+
+  } else {
+    toast.error("❌ Không tìm thấy bảng điều khiển trên thanh Header!");
+  }
+};
+
   const handlePrintReport = () => {
     toast.success("⏳ Đang chuẩn bị bản in báo cáo kinh doanh...");
     setTimeout(() => {
-      window.print(); // Mở trình duyệt in trực quan toàn bộ số liệu biểu đồ
+      window.print(); 
     }, 800);
   };
 
@@ -156,7 +170,6 @@ const AdminDashboardPage = () => {
           <div style={styles.contentCard}>
             <h4 style={styles.cardTitle}>⚡ Thao tác nhanh hệ thống</h4>
             <div style={styles.quickActionsList}>
-              {/* 1. Kích hoạt nút thêm sản phẩm của admin ở header */}
               <button 
                 type="button" 
                 style={styles.actionBtn} 
@@ -164,10 +177,6 @@ const AdminDashboardPage = () => {
               >
                 ➕ Thêm đầu sách mới
               </button>
-              
-              {/* 2. Đã loại bỏ hoàn toàn nút duyệt đơn hàng cũ tại vị trí này */}
-
-              {/* 3. Đổi sang chức năng in báo cáo làm mẫu thực tế cực mượt */}
               <button 
                 type="button" 
                 style={styles.actionBtnOutline} 
@@ -202,7 +211,6 @@ const AdminDashboardPage = () => {
         </div>
       </div>
 
-      {/* CSS inline bổ trợ cho chức năng in ấn để khi bấm in trông đẹp mắt, tự ẩn đi cụm nút thao tác */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
