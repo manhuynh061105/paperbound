@@ -5,18 +5,16 @@ import { toast } from 'react-toastify';
 const AddCategoryModal = ({ isOpen, onClose }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [categoryType, setCategoryType] = useState('main'); // 'main' là mục chính, 'sub' là mục con
-  const [parentId, setParentId] = useState(''); // Lưu ID của danh mục chính ràng buộc
-  const [mainCategories, setMainCategories] = useState([]); // Danh sách mục chính lấy từ DB
+  const [categoryType, setCategoryType] = useState('main'); 
+  const [parentId, setParentId] = useState(''); 
+  const [mainCategories, setMainCategories] = useState([]); 
   const [submitting, setSubmitting] = useState(false);
 
-  // Mỗi khi mở modal, tải danh sách các danh mục chính hiện tại từ database
   useEffect(() => {
     if (isOpen) {
       categoryService.getAll()
         .then(res => {
           const allCats = res.data.data || res.data || [];
-          // Chỉ lấy các danh mục chính (không có parent_id) làm ràng buộc cha
           const mains = allCats.filter(cat => !cat.parent_id);
           setMainCategories(mains);
         })
@@ -36,7 +34,6 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    // Kiểm tra ràng buộc bắt buộc: Nếu chọn tạo mục con thì phải chọn mục cha
     if (categoryType === 'sub' && !parentId) {
       toast.warning("⚠️ Bạn phải chọn một Danh mục chính để ràng buộc danh mục con!");
       return;
@@ -44,7 +41,6 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
 
     setSubmitting(true);
     
-    // Đóng gói dữ liệu gửi lên backend (nếu là mục chính, parent_id sẽ là null)
     const payload = {
       name: name.trim(),
       description: description.trim(),
@@ -55,7 +51,6 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
       const response = await categoryService.create(payload);
       if (response.data.success || response.data) {
         toast.success(`✨ Đã thêm danh mục: "${name}" thành công!`);
-        // Reset form về trạng thái ban đầu
         setName('');
         setDescription('');
         setCategoryType('main');
@@ -81,14 +76,13 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.body}>
             
-            {/* 1. LỰA CHỌN LOẠI DANH MỤC */}
             <div style={styles.inputGroup}>
               <label style={styles.label}>Cấp bậc danh mục:</label>
               <select 
                 value={categoryType} 
                 onChange={e => {
                   setCategoryType(e.target.value);
-                  if (e.target.value === 'main') setParentId(''); // Reset nếu chuyển về chính
+                  if (e.target.value === 'main') setParentId(''); 
                 }} 
                 style={styles.select}
               >
@@ -97,7 +91,6 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
               </select>
             </div>
 
-            {/* 2. HIỂN THỊ CHỌN DANH MỤC CHA (CHỈ HIỆN KHI CHỌN LOẠI CON) */}
             {categoryType === 'sub' && (
               <div style={styles.inputGroup} className="input-slide-down">
                 <label style={styles.label}>Thuộc danh mục chính (*):</label>
@@ -115,7 +108,6 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
               </div>
             )}
 
-            {/* 3. TÊN DANH MỤC */}
             <div style={styles.inputGroup}>
               <label style={styles.label}>Tên danh mục mới (*):</label>
               <input 
@@ -128,7 +120,6 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
               />
             </div>
 
-            {/* 4. MÔ TẢ */}
             <div style={styles.inputGroup}>
               <label style={styles.label}>Mô tả danh mục:</label>
               <textarea 
@@ -141,7 +132,6 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* HÀNH ĐỘNG FOOTER */}
           <div style={styles.footerActions}>
             <button type="button" onClick={onClose} style={styles.cancelBtn} disabled={submitting}>HỦY</button>
             <button type="submit" style={styles.submitBtn} disabled={submitting}>
@@ -169,7 +159,7 @@ const styles = {
   textarea: { padding: '10px 14px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13.5px', outline: 'none', resize: 'none', fontFamily: 'Arial, sans-serif', transition: 'all 0.2s' },
   footerActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '14px 20px', borderTop: '1px solid #f1f2f6', backgroundColor: '#f8f9fa' },
   cancelBtn: { padding: '9px 18px', borderRadius: '20px', border: '1px solid #ddd', backgroundColor: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#666', transition: 'all 0.2s' },
-  // ĐỒNG BỘ NÚT SANG MÀU ĐỎ THƯƠNG HIỆU FAHASA
+  
   submitBtn: { padding: '9px 20px', borderRadius: '20px', border: 'none', backgroundColor: '#F14D5C', color: '#fff', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', boxShadow: '0 4px 12px rgba(241, 77, 92, 0.2)', transition: 'all 0.2s' }
 };
 

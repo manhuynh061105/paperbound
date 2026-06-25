@@ -8,7 +8,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import AddProductModal from './components/AddProductModal';
 import AddCategoryModal from './components/AddCategoryModal';
-import AIChatbot from './components/AIChatbot'; // <-- Khai báo trợ lý ảo AI tại đây
+import AIChatbot from './components/AIChatbot'; 
 
 // Import các Pages
 import HomePage from './pages/HomePage';
@@ -27,26 +27,20 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 // Import Services
 import { cartService, productService } from './services/api';
 
-// ====================================================================
-// 💡 COMPONENT KIỂM TRA ĐIỀU KIỆN ẨN/HIỆN CHATBOT THEO PATH URL
-// ====================================================================
+
 const ConditionalChatbot = () => {
   const location = useLocation();
   const currentPath = location.pathname;
 
-  // Xác định các trang được phép xuất hiện dựa trên yêu cầu của bạn
   const isHomepage = currentPath === '/';
   const isMenuPage = currentPath === '/products';
   
-  // Kiểm tra trang chi tiết sản phẩm dựa theo cấu trúc dẫn động động (/products/1, /products/2...)
   const isDetailPage = currentPath.startsWith('/products/') && currentPath !== '/products';
 
-  // Chỉ trả về giao diện chatbot nếu thỏa mãn một trong các điều kiện trên
   if (isHomepage || isMenuPage || isDetailPage) {
     return <AIChatbot />;
   }
 
-  // Các trang admin, thanh toán, giỏ hàng... trả về null để tránh gây mất tập trung
   return null;
 };
 
@@ -169,7 +163,7 @@ function App() {
           </Routes>
         </main>
 
-        {/* 💡 BẢO ĐẢM ĐẶT ĐÚNG VỊ TRÍ: Nằm trong Router để useLocation của chatbot hoạt động chính xác */}
+        
         <ConditionalChatbot />
 
         <AddProductModal 

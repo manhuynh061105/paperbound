@@ -18,29 +18,21 @@ const AuthPage = ({ onLoginSuccess }) => {
     
     try {
       if (isLogin) {
-        // ==========================================
-        // XỬ LÝ ĐĂNG NHẬP THẬT (GỌI API BACKEND)
-        // ==========================================
         const response = await userService.login({ email, password });
         
         if (response.data.success) {
           const userData = response.data.user; 
-          const token = response.data.token; // 🔑 Lấy JWT token từ Backend trả về
+          const token = response.data.token;
           
-          // Lưu token và user vào localStorage để cấu hình Authorization Headers
           localStorage.setItem('token', token);
           localStorage.setItem('user', JSON.stringify(userData));
           
-          // Cập nhật trạng thái ứng dụng
           onLoginSuccess(userData);
           
           toast.success(`👋 Chào mừng ${userData.name} đã quay trở lại!`);
           navigate('/');
         }
       } else {
-        // ==========================================
-        // XỬ LÝ ĐĂNG KÝ THẬT (GỌI API BACKEND)
-        // ==========================================
         const registerData = {
           full_name: fullName,
           email: email,
@@ -51,7 +43,6 @@ const AuthPage = ({ onLoginSuccess }) => {
         const response = await userService.register(registerData);
         
         if (response.data.success) {
-          // 🔑 Lưu luôn cả token khi đăng ký thành công (nếu BE có trả về sẵn)
           if (response.data.token) {
             localStorage.setItem('token', response.data.token);
           }
@@ -70,7 +61,7 @@ const AuthPage = ({ onLoginSuccess }) => {
   return (
     <div style={styles.container}>
       <div style={styles.authBox}>
-        {/* Phần Header trang trí tiêu đề */}
+        
         <div style={styles.welcomeHeader}>
           <h2 style={styles.mainTitle}>PaperBound</h2>
           <p style={styles.subTitle}>
@@ -78,7 +69,7 @@ const AuthPage = ({ onLoginSuccess }) => {
           </p>
         </div>
 
-        {/* Tab chuyển đổi Đăng nhập / Đăng ký */}
+        
         <div style={styles.tabHeader}>
           <button 
             type="button"
@@ -106,7 +97,7 @@ const AuthPage = ({ onLoginSuccess }) => {
           </button>
         </div>
 
-        {/* FORM ĐIỀN THÔNG TIN */}
+        
         <form onSubmit={handleSubmit} style={styles.form}>
           {!isLogin && (
             <>

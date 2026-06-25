@@ -13,10 +13,7 @@ const AdminDashboardPage = () => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        
-        // 💥 ĐÃ SỬA: Đổi từ dashboardService sang productService theo đúng cấu trúc api.js của bạn
         const response = await productService.getDashboardStats(); 
-        
         if (response?.data?.success) {
           setStats(response.data.data);
         }
@@ -34,17 +31,15 @@ const AdminDashboardPage = () => {
     return (
       <div style={styles.centerBox}>
         <div style={styles.spinner}></div>
-        <p style={{ color: '#7f8c8d', fontWeight: '500' }}>Đang tổng hợp số liệu kinh doanh...</p>
+        <p style={{ color: '#64748B', fontWeight: '500' }}>Đang tổng hợp số liệu kinh doanh...</p>
       </div>
     );
   }
 
-  // Tìm mức doanh thu lớn nhất trong danh sách để tính tỷ lệ phần trăm chiều cao cột biểu đồ
   const maxRevenue = Math.max(...stats.chartData.map(d => Number(d.monthly_revenue)), 1);
 
   return (
     <div style={styles.container}>
-      {/* HEADER */}
       <div style={styles.mainHeader}>
         <div>
           <h2 style={styles.pageTitle}>📊 Báo Cáo Hoạt Động Kinh Doanh</h2>
@@ -52,133 +47,363 @@ const AdminDashboardPage = () => {
         </div>
       </div>
 
-      {/* 3 THẺ CARD TỔNG QUAN (KPI CARDS) */}
       <div style={styles.kpiGrid}>
-        <div style={{ ...styles.kpiCard, borderLeft: '5px solid #2ECC71' }}>
-          <div style={styles.kpiIconBox}>💰</div>
+        <div style={{ ...styles.kpiCard, borderLeft: '5px solid #E67E22' }}>
+          <div style={{ ...styles.kpiIconBox, color: '#E67E22', backgroundColor: '#FDF6F0' }}>💰</div>
           <div>
             <div style={styles.kpiLabel}>Tổng Doanh Thu</div>
-            <div style={{ ...styles.kpiValue, color: '#2ECC71' }}>
+            <div style={{ ...styles.kpiValue, color: '#2C3E50' }}>
               {stats.summary.totalRevenue.toLocaleString('vi-VN')} đ
             </div>
           </div>
         </div>
 
-        <div style={{ ...styles.kpiCard, borderLeft: '5px solid #3498DB' }}>
-          <div style={styles.kpiIconBox}>📦</div>
+        <div style={{ ...styles.kpiCard, borderLeft: '5px solid #2C3E50' }}>
+          <div style={{ ...styles.kpiIconBox, color: '#2C3E50', backgroundColor: '#F1F5F9' }}>📦</div>
           <div>
             <div style={styles.kpiLabel}>Số Lượng Đơn Hàng</div>
-            <div style={{ ...styles.kpiValue, color: '#3498DB' }}>
+            <div style={{ ...styles.kpiValue, color: '#2C3E50' }}>
               {stats.summary.totalOrders.toLocaleString('vi-VN')} đơn
             </div>
           </div>
         </div>
 
-        <div style={{ ...styles.kpiCard, borderLeft: '5px solid #E67E22' }}>
-          <div style={styles.kpiIconBox}>📚</div>
+        <div style={{ ...styles.kpiCard, borderLeft: '5px solid #64748B' }}>
+          <div style={{ ...styles.kpiIconBox, color: '#64748B', backgroundColor: '#F8FAFC' }}>📚</div>
           <div>
             <div style={styles.kpiLabel}>Tổng Đầu Sách Trong Kho</div>
-            <div style={{ ...styles.kpiValue, color: '#E67E22' }}>
+            <div style={{ ...styles.kpiValue, color: '#2C3E50' }}>
               {stats.summary.totalProducts.toLocaleString('vi-VN')} sản phẩm
             </div>
           </div>
         </div>
       </div>
 
-      {/* KHU VỰC BIỂU ĐỒ DOANH THU */}
-      <div style={styles.chartSectionCard}>
-        <h3 style={styles.chartTitle}>📈 Biểu Đồ Thống Kê Doanh Thu Các Tháng</h3>
-        <p style={styles.chartSubtitle}>Dữ liệu tính trên các đơn hàng đã giao dịch thành công trong năm</p>
+      <div style={styles.dashboardGrid}>
+        <div style={styles.chartSectionCard}>
+          <h3 style={styles.chartTitle}>📈 Biểu Đồ Thống Kê Doanh Thu Các Tháng</h3>
+          <p style={styles.chartSubtitle}>Dữ liệu tính trên các đơn hàng đã giao dịch thành công trong năm</p>
 
-        {stats.chartData.length === 0 ? (
-          <div style={styles.emptyChart}>
-            <span>📉</span>
-            <p>Chưa có dữ liệu doanh thu để hiển thị biểu đồ.</p>
-          </div>
-        ) : (
-          <div style={styles.chartContainer}>
-            {/* Thân biểu đồ */}
-            <div style={styles.chartBarsArea}>
-              {stats.chartData.map((item, index) => {
-                // Tính chiều cao cột dựa trên tỷ lệ doanh thu tháng đó so với tháng cao nhất
-                const heightPercentage = (Number(item.monthly_revenue) / maxRevenue) * 100;
-                
-                return (
-                  <div key={index} style={styles.chartColumnWrapper}>
-                    {/* Số tiền hiển thị trên đầu cột */}
-                    <span style={styles.barTooltip}>
-                      {Number(item.monthly_revenue) >= 1000000 
-                        ? `${(Number(item.monthly_revenue) / 1000000).toFixed(1)}M`
-                        : Number(item.monthly_revenue).toLocaleString('vi-VN')
-                      }
-                    </span>
-                    
-                    {/* Cột màu động */}
-                    <div 
-                      style={{ 
-                        ...styles.chartBar, 
-                        height: `${Math.max(heightPercentage, 8)}%` // Tối thiểu 8% nhìn cho đẹp
-                      }}
-                    >
-                      <span style={styles.orderCountBadge}>{item.order_count} đơn</span>
+          {stats.chartData.length === 0 ? (
+            <div style={styles.emptyChart}>
+              <span style={{ fontSize: '40px' }}>📉</span>
+              <p style={{ marginTop: '10px' }}>Chưa có dữ liệu doanh thu để hiển thị biểu đồ.</p>
+            </div>
+          ) : (
+            <div style={styles.chartContainer}>
+              <div style={styles.chartBarsArea}>
+                {stats.chartData.map((item, index) => {
+                  const heightPercentage = (Number(item.monthly_revenue) / maxRevenue) * 100;
+                  return (
+                    <div key={index} style={styles.chartColumnWrapper}>
+                      <span style={styles.barTooltip}>
+                        {Number(item.monthly_revenue) >= 1000000 
+                          ? `${(Number(item.monthly_revenue) / 1000000).toFixed(1)}M`
+                          : Number(item.monthly_revenue).toLocaleString('vi-VN')
+                        }
+                      </span>
+                      
+                      <div 
+                        style={{ 
+                          ...styles.chartBar, 
+                          height: `${Math.max(heightPercentage, 12)}%` 
+                        }}
+                      >
+                        <span style={styles.orderCountBadge}>{item.order_count} đơn</span>
+                      </div>
+
+                      <span style={styles.chartXLabel}>{item.month_year}</span>
                     </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
 
-                    {/* Nhãn tháng ở chân cột */}
-                    <span style={styles.chartXLabel}>{item.month_year}</span>
-                  </div>
-                );
-              })}
+        <div style={styles.sideSection}>
+          <div style={styles.contentCard}>
+            <h4 style={styles.cardTitle}>⚡ Thao tác nhanh hệ thống</h4>
+            <div style={styles.quickActionsList}>
+              <button type="button" style={styles.actionBtn}>➕ Thêm đầu sách mới</button>
+              <button type="button" style={{ ...styles.actionBtn, backgroundColor: '#2C3E50' }}>📋 Duyệt đơn hàng chờ</button>
+              <button type="button" style={styles.actionBtnOutline}>📥 Xuất báo cáo Excel</button>
             </div>
           </div>
-        )}
+
+          <div style={styles.contentCard}>
+            <h4 style={styles.cardTitle}>🎯 Chỉ tiêu kinh doanh tháng này</h4>
+            <div style={styles.progressContainer}>
+              <div style={styles.progressMeta}>
+                <span style={styles.progressLabel}>Mục tiêu doanh thu</span>
+                <span style={styles.progressValue}>75%</span>
+              </div>
+              <div style={styles.progressBarBg}>
+                <div style={{ ...styles.progressBarFill, width: '75%', backgroundColor: '#E67E22' }}></div>
+              </div>
+            </div>
+            <div style={{ ...styles.progressContainer, marginTop: '16px' }}>
+              <div style={styles.progressMeta}>
+                <span style={styles.progressLabel}>Chỉ tiêu xử lý đơn</span>
+                <span style={styles.progressValue}>92%</span>
+              </div>
+              <div style={styles.progressBarBg}>
+                <div style={{ ...styles.progressBarFill, width: '92%', backgroundColor: '#2C3E50' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-// ================= CSS STYLESHEET CHO GIAO DIỆN DASHBOARD HOÀN HẢO =================
 const styles = {
-  container: { padding: '40px 6%', backgroundColor: '#F4F6F8', minHeight: '100vh', fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif' },
-  mainHeader: { marginBottom: '35px' },
-  pageTitle: { margin: 0, fontSize: '24px', fontWeight: '800', color: '#1A2530', letterSpacing: '-0.5px' },
-  pageSubtitle: { margin: '4px 0 0 0', fontSize: '13.5px', color: '#7F8C8D' },
-  
-  // KPI Cards Styles
-  kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginBottom: '40px' },
-  kpiCard: { backgroundColor: '#ffffff', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: '20px' },
-  kpiIconBox: { width: '55px', height: '55px', backgroundColor: '#F8F9FA', borderRadius: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '24px' },
-  kpiLabel: { fontSize: '13.5px', fontWeight: '700', color: '#7F8C8D', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' },
-  kpiValue: { fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' },
-  
-  // Chart Section Styles
-  chartSectionCard: { backgroundColor: '#ffffff', padding: '35px', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.02)' },
-  chartTitle: { margin: 0, fontSize: '17px', fontWeight: '800', color: '#1A2530' },
-  chartSubtitle: { margin: '4px 0 30px 0', fontSize: '13px', color: '#95A5A6' },
-  emptyChart: { padding: '60px 0', textAlign: 'center', color: '#95A5A6' },
-  
-  // Custom HTML CSS Bar Chart
-  chartContainer: { height: '350px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', borderBottom: '2px solid #E5E8E8', paddingBottom: '10px' },
-  chartBarsArea: { display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', height: '100%', width: '100%', padding: '0 20px' },
-  chartColumnWrapper: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '60px', height: '100%', justifyContent: 'flex-end', gap: '10px', position: 'relative' },
-  barTooltip: { fontSize: '11px', fontWeight: '700', color: '#2C3E50', backgroundColor: '#EAEDED', padding: '3px 6px', borderRadius: '4px', marginBottom: '2px' },
-  chartBar: { width: '100%', background: 'linear-gradient(180deg, #F14D5C 0%, #F57C87 100%)', borderRadius: '6px 6px 0 0', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '8px', transition: 'all 0.5s ease', cursor: 'pointer', boxShadow: '0 4px 12px rgba(241,77,92,0.15)' },
-  chartBar: {
-    width: '100%',
-    background: 'linear-gradient(180deg, #3498DB 0%, #85C1E9 100%)', // Đổi sang tông xanh dương sang trọng
-    borderRadius: '6px 6px 0 0',
-    display: 'flex',
-    justify: 'center',
-    alignItems: 'flex-start',
-    paddingTop: '8px',
-    transition: 'all 0.5s ease-in-out',
-    boxShadow: '0 4px 12px rgba(52,152,219,0.15)'
+  container: { 
+    padding: '40px 15px 80px 15px', 
+    backgroundColor: '#F8FAFC', 
+    minHeight: '100vh', 
+    maxWidth: '1200px',
+    margin: '0 auto',
+    fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    boxSizing: 'border-box'
   },
-  orderCountBadge: { fontSize: '9px', fontWeight: '700', color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.2)', padding: '2px 4px', borderRadius: '10px', whiteSpace: 'nowrap' },
-  chartXLabel: { fontSize: '12px', fontWeight: '600', color: '#7F8C8D', marginTop: '5px', whiteSpace: 'nowrap' },
-  
-  // Loader Styles
-  centerBox: { display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', gap: '15px' },
-  spinner: { width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #3498DB', borderRadius: '50%', animation: 'spin 1s linear infinite' }
+  mainHeader: { 
+    marginBottom: '32px' 
+  },
+  pageTitle: { 
+    margin: 0, 
+    fontSize: '24px', 
+    fontWeight: '700', 
+    color: '#2C3E50', 
+    letterSpacing: '0.3px' 
+  },
+  pageSubtitle: { 
+    margin: '6px 0 0 0', 
+    fontSize: '14px', 
+    color: '#64748B' 
+  },
+  kpiGrid: { 
+    display: 'grid', 
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+    gap: '24px', 
+    marginBottom: '32px' 
+  },
+  kpiCard: { 
+    backgroundColor: '#ffffff', 
+    padding: '24px', 
+    borderRadius: '12px', 
+    boxShadow: '0 4px 20px rgba(0,0,0,0.01)', 
+    border: '1px solid #E2E8F0',
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '20px' 
+  },
+  kpiIconBox: { 
+    width: '54px', 
+    height: '54px', 
+    borderRadius: '10px', 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    fontSize: '22px' 
+  },
+  kpiLabel: { 
+    fontSize: '12px', 
+    fontWeight: '700', 
+    color: '#64748B', 
+    textTransform: 'uppercase', 
+    letterSpacing: '0.5px', 
+    marginBottom: '4px' 
+  },
+  kpiValue: { 
+    fontSize: '20px', 
+    fontWeight: '700', 
+    letterSpacing: '-0.3px' 
+  },
+  dashboardGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1.5fr 1fr',
+    gap: '24px',
+    alignItems: 'start'
+  },
+  chartSectionCard: { 
+    backgroundColor: '#ffffff', 
+    padding: '30px', 
+    borderRadius: '12px', 
+    boxShadow: '0 4px 20px rgba(0,0,0,0.01)',
+    border: '1px solid #E2E8F0'
+  },
+  chartTitle: { 
+    margin: 0, 
+    fontSize: '16px', 
+    fontWeight: '700', 
+    color: '#2C3E50' 
+  },
+  chartSubtitle: { 
+    margin: '6px 0 30px 0', 
+    fontSize: '13.5px', 
+    color: '#64748B' 
+  },
+  emptyChart: { 
+    padding: '80px 0', 
+    textAlign: 'center', 
+    color: '#94A3B8' 
+  },
+  chartContainer: { 
+    height: '320px', 
+    display: 'flex', 
+    flexDirection: 'column', 
+    justifyContent: 'flex-end', 
+    borderBottom: '2px solid #E2E8F0', 
+    paddingBottom: '6px' 
+  },
+  chartBarsArea: { 
+    display: 'flex', 
+    justifyContent: 'space-around', 
+    alignItems: 'flex-end', 
+    height: '100%', 
+    width: '100%' 
+  },
+  chartColumnWrapper: { 
+    display: 'flex', 
+    flexDirection: 'column', 
+    alignItems: 'center', 
+    width: '50px', 
+    height: '100%', 
+    justifyContent: 'flex-end', 
+    gap: '8px', 
+    position: 'relative' 
+  },
+  barTooltip: { 
+    fontSize: '11px', 
+    fontWeight: '700', 
+    color: '#475569', 
+    backgroundColor: '#F1F5F9', 
+    padding: '4px 6px', 
+    borderRadius: '4px', 
+    whiteSpace: 'nowrap'
+  },
+  chartBar: { 
+    width: '100%', 
+    background: 'linear-gradient(180deg, #E67E22 0%, #F39C12 100%)', 
+    borderRadius: '6px 6px 0 0', 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'flex-start', 
+    paddingTop: '6px', 
+    transition: 'all 0.4s ease-in-out',
+    boxShadow: '0 4px 10px rgba(230,126,34,0.15)'
+  },
+  orderCountBadge: { 
+    fontSize: '9px', 
+    fontWeight: '700', 
+    color: '#ffffff', 
+    backgroundColor: 'rgba(0,0,0,0.15)', 
+    padding: '2px 4px', 
+    borderRadius: '4px', 
+    whiteSpace: 'nowrap' 
+  },
+  chartXLabel: { 
+    fontSize: '12px', 
+    fontWeight: '600', 
+    color: '#64748B', 
+    marginTop: '6px', 
+    whiteSpace: 'nowrap' 
+  },
+  sideSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px'
+  },
+  contentCard: {
+    backgroundColor: '#ffffff',
+    padding: '24px',
+    borderRadius: '12px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.01)',
+    border: '1px solid #E2E8F0'
+  },
+  cardTitle: {
+    margin: '0 0 16px 0',
+    fontSize: '14.5px',
+    fontWeight: '700',
+    color: '#2C3E50'
+  },
+  quickActionsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  actionBtn: {
+    width: '100%',
+    backgroundColor: '#E67E22',
+    color: '#ffffff',
+    border: 'none',
+    padding: '12px',
+    borderRadius: '8px',
+    fontWeight: '600',
+    fontSize: '13.5px',
+    cursor: 'pointer',
+    transition: 'opacity 0.2s',
+    outline: 'none'
+  },
+  actionBtnOutline: {
+    width: '100%',
+    backgroundColor: 'transparent',
+    color: '#475569',
+    border: '1px solid #CBD5E1',
+    padding: '11px',
+    borderRadius: '8px',
+    fontWeight: '600',
+    fontSize: '13.5px',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+    outline: 'none'
+  },
+  progressContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px'
+  },
+  progressMeta: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '13px',
+    fontWeight: '600'
+  },
+  progressLabel: {
+    color: '#64748B'
+  },
+  progressValue: {
+    color: '#2C3E50'
+  },
+  progressBarBg: {
+    width: '100%',
+    height: '8px',
+    backgroundColor: '#F1F5F9',
+    borderRadius: '10px',
+    overflow: 'hidden'
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: '10px'
+  },
+  centerBox: { 
+    display: 'flex', 
+    flexDirection: 'column', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    minHeight: '60vh', 
+    gap: '16px' 
+  },
+  spinner: { 
+    width: '40px', 
+    height: '40px', 
+    border: '4px solid #E2E8F0', 
+    borderTop: '4px solid #E67E22', 
+    borderRadius: '50%', 
+    animation: 'spin 1s linear infinite' 
+  }
 };
 
 export default AdminDashboardPage;

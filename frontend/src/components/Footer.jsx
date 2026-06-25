@@ -3,16 +3,13 @@ import React from 'react';
 const Footer = () => {
   return (
     <footer style={styles.footerContainer}>
-      {/* TÍCH HỢP HIỆU ỨNG HOVER ĐỔI MÀU CHO CÁC ĐƯỜNG LINK */}
       <style>{footerHoverCSS}</style>
 
-      {/* PHẦN CHÍNH CỦA FOOTER - CHIA LƯỚI 4 CỘT CHUẨN FAHASA */}
       <div style={styles.footerMain}>
         
-        {/* CỘT 1: THÔNG TIN THƯƠNG HIỆU */}
         <div style={styles.footerColumn}>
           <h2 style={styles.logoText}>
-            PAPERBOUND<span style={{ color: '#F14D5C' }}>.</span>
+            PAPERBOUND<span style={{ color: '#E67E22' }}>.</span>
           </h2>
           <p style={styles.brandDescription}>
             Hệ thống nhà sách thông minh số hóa trực tuyến. Phục vụ hàng ngàn tựa sách bản quyền phong phú, tích hợp hóa đơn điện tử VAT 5% đầy đủ và minh bạch.
@@ -21,7 +18,6 @@ const Footer = () => {
           <p style={styles.addressText}>✉️ support@paperbound.vn</p>
         </div>
 
-        {/* CỘT 2: DỊCH VỤ CỦA CHÚNG TÔI */}
         <div style={styles.footerColumn}>
           <h4 style={styles.columnTitle}>DỊCH VỤ & CHÍNH SÁCH</h4>
           <ul style={styles.linkList}>
@@ -32,7 +28,6 @@ const Footer = () => {
           </ul>
         </div>
 
-        {/* CỘT 3: HỖ TRỢ KHÁCH HÀNG */}
         <div style={styles.footerColumn}>
           <h4 style={styles.columnTitle}>HỖ TRỢ KHÁCH HÀNG</h4>
           <ul style={styles.linkList}>
@@ -43,7 +38,6 @@ const Footer = () => {
           </ul>
         </div>
 
-        {/* CỘT 4: KẾT NỐI & KHUYẾN MÃI */}
         <div style={styles.footerColumn}>
           <h4 style={styles.columnTitle}>KẾT NỐI VỚI CHÚNG TÔI</h4>
           <p style={styles.brandDescription}>Đăng ký nhận tin để không bỏ lỡ các đợt phát hành sách hot nhất.</p>
@@ -61,10 +55,8 @@ const Footer = () => {
 
       </div>
 
-      {/* ĐƯỜNG KẺ NGĂN CÁCH MẢNH */}
       <hr style={styles.footerDivider} />
 
-      {/* PHẦN COPYRIGHT DƯỚI CÙNG */}
       <div style={styles.footerBottom}>
         <p style={styles.copyrightText}>
           © 2026 Paperbound Bookstore. Bảo lưu mọi quyền. Hệ thống quản lý và vận hành trực tuyến chuyên nghiệp.
@@ -74,78 +66,144 @@ const Footer = () => {
   );
 };
 
-// CSS HOVER CHO CÁC ĐƯỜNG LINK TRỞ NÊN MƯỢT MÀ VÀ ĐỒNG BỘ MÀU ĐỎ FAHASA
 const footerHoverCSS = `
   .footer-link-item {
     cursor: pointer;
-    transition: all 0.2s ease;
-    padding: 4px 0;
+    transition: all 0.2s ease-in-out;
+    padding: 2px 0;
   }
   .footer-link-item:hover {
-    color: #F14D5C !important;
-    transform: translateX(4px);
+    color: #E67E22 !important;
+    transform: translateX(6px);
   }
   .footer-social-icon {
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: all 0.2s ease-in-out;
   }
   .footer-social-icon:hover {
-    transform: scale(1.1);
-    color: #F14D5C !important;
+    transform: translateY(-2px);
+    color: #E67E22 !important;
   }
 `;
 
 const styles = {
-  // GỠ BỎ POSITION FIXED - CHO FOOTER NẰM TỰ NHIÊN DƯỚI ĐÁY TRANG VỚI NỀN TRẮNG SẠCH SẼ
   footerContainer: {
     backgroundColor: '#ffffff',
-    color: '#4f5d75',
-    padding: '45px 0 25px 0',
-    borderTop: '1px solid #f1f2f6',
-    boxShadow: '0 -4px 15px rgba(0,0,0,0.02)',
-    fontFamily: 'Arial, sans-serif',
+    color: '#475569',
+    padding: '60px 0 30px 0',
+    borderTop: '1px solid #E2E8F0',
+    boxShadow: '0 -4px 20px rgba(0,0,0,0.01)',
+    fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     width: '100%',
     boxSizing: 'border-box',
-    marginTop: '50px' // Đẩy xa nội dung bên trên tạo không gian thở
+    marginTop: '60px'
   },
-  
-  // Layout 4 cột căn giữa đồng bộ với độ rộng 1200px của trang chủ
   footerMain: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-    gap: '30px',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gap: '40px',
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '0 20px',
+    padding: '0 24px',
     boxSizing: 'border-box'
   },
-  
   footerColumn: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px'
+    gap: '16px'
   },
-  
-  logoText: { margin: 0, fontSize: '22px', fontWeight: '800', color: '#2C3E50', letterSpacing: '1px' },
-  columnTitle: { margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#2C3E50', borderBottom: '2px solid #F14D5C', paddingBottom: '6px', alignSelf: 'flex-start' },
-  
-  brandDescription: { fontSize: '13px', color: '#7f8c8d', lineHeight: '1.6', margin: 0 },
-  addressText: { fontSize: '13px', color: '#4f5d75', margin: 0 },
-  
-  linkList: { listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#4f5d75' },
-  
-  // Hộp thư đăng ký nhận tin khuyến mãi
-  subscribeBox: { display: 'flex', border: '1px solid #F14D5C', borderRadius: '20px', overflow: 'hidden', backgroundColor: '#fff', maxWidth: '240px' },
-  subscribeInput: { flex: 1, border: 'none', outline: 'none', padding: '8px 14px', fontSize: '12.5px' },
-  subscribeBtn: { backgroundColor: '#F14D5C', color: '#fff', border: 'none', padding: '0 15px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' },
-  
-  socialRow: { display: 'flex', gap: '15px', fontSize: '13px', marginTop: '5px' },
-  socialIcon: { color: '#7f8c8d', fontWeight: '500' },
-  
-  footerDivider: { border: 'none', borderTop: '1px solid #f1f2f6', margin: '30px 0 20px 0' },
-  
-  footerBottom: { maxWidth: '1200px', margin: '0 auto', padding: '0 20px', textAlign: 'center' },
-  copyrightText: { margin: 0, fontSize: '12.5px', color: '#95a5a6' }
+  logoText: { 
+    margin: 0, 
+    fontSize: '22px', 
+    fontWeight: '800', 
+    color: '#2C3E50', 
+    letterSpacing: '0.8px' 
+  },
+  columnTitle: { 
+    margin: 0, 
+    fontSize: '14px', 
+    fontWeight: '700', 
+    color: '#2C3E50', 
+    borderBottom: '2px solid #E67E22', 
+    paddingBottom: '6px', 
+    alignSelf: 'flex-start',
+    letterSpacing: '0.3px'
+  },
+  brandDescription: { 
+    fontSize: '13.5px', 
+    color: '#64748B', 
+    lineHeight: '1.6', 
+    margin: 0 
+  },
+  addressText: { 
+    fontSize: '13.5px', 
+    color: '#475569', 
+    margin: 0 
+  },
+  linkList: { 
+    listStyleType: 'none', 
+    padding: 0, 
+    margin: 0, 
+    display: 'flex', 
+    flexDirection: 'column', 
+    gap: '10px', 
+    fontSize: '13.5px', 
+    color: '#475569' 
+  },
+  subscribeBox: { 
+    display: 'flex', 
+    border: '1px solid #E2E8F0', 
+    borderRadius: '24px', 
+    overflow: 'hidden', 
+    backgroundColor: '#F8FAFC', 
+    maxWidth: '280px',
+    transition: 'border-color 0.2s'
+  },
+  subscribeInput: { 
+    flex: 1, 
+    border: 'none', 
+    outline: 'none', 
+    padding: '10px 16px', 
+    fontSize: '13px',
+    backgroundColor: 'transparent',
+    color: '#1E293B'
+  },
+  subscribeBtn: { 
+    backgroundColor: '#2C3E50', 
+    color: '#ffffff', 
+    border: 'none', 
+    padding: '0 20px', 
+    fontWeight: '600', 
+    cursor: 'pointer', 
+    fontSize: '13px',
+    transition: 'background-color 0.2s'
+  },
+  socialRow: { 
+    display: 'flex', 
+    gap: '20px', 
+    fontSize: '13.5px', 
+    marginTop: '4px' 
+  },
+  socialIcon: { 
+    color: '#64748B', 
+    fontWeight: '500' 
+  },
+  footerDivider: { 
+    border: 'none', 
+    borderTop: '1px solid #E2E8F0', 
+    margin: '40px 0 24px 0' 
+  },
+  footerBottom: { 
+    maxWidth: '1200px', 
+    margin: '0 auto', 
+    padding: '0 24px', 
+    textAlign: 'center' 
+  },
+  copyrightText: { 
+    margin: 0, 
+    fontSize: '13px', 
+    color: '#94A3B8' 
+  }
 };
 
 export default Footer;

@@ -2,9 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { aiService } from '../services/api';
 
-// ====================================================================
-// 💡 CẤU HÌNH ĐƯỜNG DẪN API AN TOÀN TUYỆT ĐỐI CHO VITE (KHÔNG DÙNG BIẾN PROCESS)
-// ====================================================================
+
 const API_BASE_URL = import.meta.env?.VITE_API_URL || 
   (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
     ? 'http://localhost:5000' 
@@ -17,16 +15,13 @@ const AIChatbot = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Lấy userId an toàn từ hệ thống Auth lưu ở localStorage
   const userContainer = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
   const userId = userContainer?.id || null; 
 
-  // 1. Tự động cuộn xuống tin nhắn mới nhất
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // 2. Tải lịch sử chat cũ từ Database PostgreSQL khi khởi tạo (Chỉ chạy 1 lần khi có userId)
   useEffect(() => {
     if (userId) {
       const fetchChatHistory = async () => {
@@ -58,7 +53,6 @@ const AIChatbot = () => {
     ]);
   };
 
-  // 3. Xử lý gửi tin nhắn mới lên API
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
@@ -69,13 +63,11 @@ const AIChatbot = () => {
     setLoading(true);
 
     try {
-      // Gọi qua aiService đã đồng bộ Key chuẩn gửi lên Backend ({ userId, message })
       const res = await aiService.sendMessage({
         userId: userId, 
         message: userText
       });
 
-      // Bóc tách dữ liệu thông minh, linh hoạt theo cấu trúc trả về của Backend
       const aiReply = res.data?.data?.message_content || 
                       res.data?.data?.message || 
                       res.data?.data ||
@@ -97,7 +89,6 @@ const AIChatbot = () => {
 
   return (
     <div style={styles.container}>
-      {/* 1. Icon bong bóng nhỏ bật/tắt */}
       <button 
         onClick={() => setIsOpen(!isOpen)} 
         style={{
@@ -116,15 +107,13 @@ const AIChatbot = () => {
         )}
       </button>
 
-      {/* 2. Khung cửa sổ chat (Đã cải tiến sang ẩn/hiện bằng CSS display để giữ lịch sử) */}
       <div style={{
         ...styles.chatWindow,
-        display: isOpen ? 'flex' : 'none', // ⚡️ Bí kíp giúp giữ nguyên phiên chat, không bị mất tin nhắn khi ẩn khung!
+        display: isOpen ? 'flex' : 'none', 
         opacity: isOpen ? 1 : 0,
         transform: isOpen ? 'translateY(0)' : 'translateY(20px)',
         pointerEvents: isOpen ? 'all' : 'none',
       }}>
-        {/* Header khung chat */}
         <div style={styles.chatHeader}>
           <div style={styles.headerInfo}>
             <div style={styles.avatarCircle}>📖</div>
@@ -135,7 +124,6 @@ const AIChatbot = () => {
           </div>
         </div>
         
-        {/* Khu vực hiển thị tin nhắn */}
         <div style={styles.messageArea}>
           {messages.map((msg, idx) => (
             <div key={idx} style={{
@@ -164,7 +152,6 @@ const AIChatbot = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Ô nhập tin nhắn */}
         <form onSubmit={handleSendMessage} style={styles.inputForm}>
           <input 
             type="text" 
@@ -191,7 +178,6 @@ const AIChatbot = () => {
   );
 };
 
-// ================= CSS STYLESHEET CHUẨN =================
 const styles = {
   container: { position: 'fixed', bottom: '25px', right: '25px', zIndex: 9999, fontFamily: '"Inter", system-ui, sans-serif' },
   launcherBtn: { width: '65px', height: '65px', borderRadius: '50%', backgroundColor: '#1a202c', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },

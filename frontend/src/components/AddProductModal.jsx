@@ -8,27 +8,22 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
   const [rating, setRating] = useState('5.0');
-  const [stockQuantity, setStockQuantity] = useState('10'); // 💡 KHỞI TẠO STATE SỐ LƯỢNG TỒN KHO (Mặc định là 10)
+  const [stockQuantity, setStockQuantity] = useState('10'); 
   const [coverImage, setCoverImage] = useState('');
   
-  // 💡 QUẢN LÝ DANH SÁCH DANH MỤC ĐƯỢC CHỌN (Mặc định có 1 dòng trống ban đầu)
   const [selectedCategories, setSelectedCategories] = useState(['']);
   
-  // Danh mục thô từ DB và Danh mục đã được sắp xếp phân cấp để render ô Select
   const [hierarchicalCategories, setHierarchicalCategories] = useState([]);
 
-  // Tải dữ liệu danh mục và dựng cây cấu trúc Chính - Con trực quan
   useEffect(() => {
     if (isOpen) {
       categoryService.getAll()
         .then(res => {
           const cats = res.data.data || res.data || [];
           
-          // Tách biệt cha và con
           const mains = cats.filter(c => !c.parent_id);
           const structured = [];
           
-          // Tạo mảng phẳng có thứ tự: Danh mục chính -> Các danh mục con của nó
           mains.forEach(main => {
             structured.push({ ...main, isHeader: true, displayName: `📂 ${main.name.toUpperCase()}` });
             
@@ -49,12 +44,10 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
 
   if (!isOpen) return null;
 
-  // Xử lý thêm một dòng chọn danh mục mới
   const handleAddCategoryRow = () => {
     setSelectedCategories([...selectedCategories, '']);
   };
 
-  // Xử lý xóa một dòng chọn danh mục
   const handleRemoveCategoryRow = (index) => {
     if (selectedCategories.length === 1) {
       toast.warning("⚠️ Sản phẩm phải thuộc ít nhất một danh mục!");
@@ -64,7 +57,6 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
     setSelectedCategories(updated);
   };
 
-  // Xử lý thay đổi giá trị select tại một dòng nhất định
   const handleCategoryChange = (index, value) => {
     const updated = [...selectedCategories];
     updated[index] = value;
@@ -87,12 +79,10 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Lọc bỏ các ô select chưa chọn giá trị và chuyển về dạng số nguyên
     const validCategoryIds = selectedCategories
       .filter(id => id !== '')
       .map(id => parseInt(id, 10));
 
-    // Loại bỏ các ID danh mục bị trùng lặp nếu Admin vô tình chọn giống nhau
     const uniqueCategoryIds = [...new Set(validCategoryIds)];
 
     if (uniqueCategoryIds.length === 0) {
@@ -100,7 +90,6 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
       return;
     }
 
-    // Kiểm tra tính hợp lệ của số lượng tồn kho
     const parsedStock = parseInt(stockQuantity, 10);
     if (isNaN(parsedStock) || parsedStock < 0) {
       toast.warning("⚠️ Số lượng tồn kho không được để trống và phải lớn hơn hoặc bằng 0!");
@@ -111,9 +100,9 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
       title: title.trim(),
       author: author.trim(),
       price: parseFloat(price),
-      tax_rate: 5, // Cập nhật đồng bộ VAT 5% theo hệ thống sách Paperbound
-      stock_quantity: parsedStock, // 💡 ĐÃ BỔ SUNG: Ép kiểu nguyên bọc dữ liệu gửi lên DB
-      category_ids: uniqueCategoryIds, // GỬI MẢNG CÁC ID LÊN BACKEND
+      tax_rate: 5, 
+      stock_quantity: parsedStock, 
+      category_ids: uniqueCategoryIds, 
       description: description.trim(),
       rating: parseFloat(rating),
       cover_image: coverImage
@@ -121,7 +110,6 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
 
     onAdd(newProduct);
     
-    // Reset Form sạch sẽ
     setTitle(''); setAuthor(''); setPrice('');
     setDescription(''); setRating('5.0'); setStockQuantity('10'); setCoverImage('');
     setSelectedCategories(['']);
@@ -149,7 +137,6 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
               <input type="text" value={author} onChange={e => setAuthor(e.target.value)} required style={styles.input} placeholder="Ví dụ: Dale Carnegie" />
             </div>
 
-            {/* 💡 THIẾT KẾ LẠI HÀNG NGANG: Chia 3 cột đều nhau cực đẹp */}
             <div style={styles.row}>
               <div style={{ ...styles.inputGroup, flex: 1.2 }}>
                 <label style={styles.label}>Giá bán (VNĐ) (*):</label>
@@ -159,14 +146,12 @@ const AddProductModal = ({ isOpen, onClose, onAdd }) => {
                 <label style={styles.label}>Điểm số (1-5):</label>
                 <input type="number" step="0.1" min="1" max="5" value={rating} onChange={e => setRating(e.target.value)} style={styles.input} />
               </div>
-              {/* Ô TỒN KHO MỚI TÍCH HỢP */}
               <div style={{ ...styles.inputGroup, flex: 0.9 }}>
                 <label style={styles.label}>Số lượng kho (*):</label>
                 <input type="number" min="0" value={stockQuantity} onChange={e => setStockQuantity(e.target.value)} required style={styles.input} placeholder="Ví dụ: 50" />
               </div>
             </div>
 
-            {/* ĐOẠN QUẢN LÝ ĐA DANH MỤC ĐỘNG */}
             <div style={styles.inputGroup}>
               <div style={styles.categoryLabelRow}>
                 <label style={styles.label}>Thuộc các danh mục sách (*):</label>

@@ -1,8 +1,6 @@
-/* ==========================================================================
-   RESET & PHÔNG CHỮ TOÀN CỤC (GLOBAL)
-   ========================================================================== */
+
 html {
-  scroll-behavior: smooth; /* Cuộn trang mượt mà khi chuyển trang hoặc bấm link */
+  scroll-behavior: smooth; 
 }
 
 body {
@@ -16,35 +14,31 @@ body {
   color: #2C3E50;
 }
 
-/* Base style cho tất cả các nút bấm trong hệ thống để chuẩn bị hiệu ứng */
+
 button, input, select, .categoryCell, .productCard, .featuredCard {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* ==========================================================================
-   HIỆU ỨNG TƯƠNG TÁC CHUỘT (HOVER EFFECTS) CHUẨN UX
-   ========================================================================== */
 
-/* 1. Các nút bấm hành động (Ví dụ: Thêm vào giỏ, Đặt hàng) */
 button:hover {
-  filter: brightness(1.1); /* Tự động sáng nhẹ lên khi rê chuột vào */
-  transform: translateY(-1px); /* Nhấc nhẹ lên tạo cảm giác nổi bọt */
+  filter: brightness(1.1); 
+  transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 button:active {
-  transform: translateY(1px); /* Lún xuống nhẹ khi click chuột thật tạo phản hồi lực */
+  transform: translateY(1px); 
   filter: brightness(0.95);
 }
 
-/* 2. Hiệu ứng thẻ sản phẩm (Product Cards) chuẩn Fahasa */
+
 .productCard:hover, .featuredCard:hover {
-  transform: translateY(-6px); /* Nhấc thẻ lên cao hơn một chút */
+  transform: translateY(-6px); 
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08) !important;
-  border-color: #F14D5C !important; /* Đổi viền sang màu đỏ thương hiệu nhẹ */
+  border-color: #F14D5C !important; 
 }
 
-/* Ảnh sản phẩm phóng to nhẹ bên trong khung khi hover */
+
 .productCard:hover img, .featuredCard:hover img {
   transform: scale(1.03);
   transition: transform 0.3s ease;
@@ -53,15 +47,15 @@ button:active {
   transition: transform 0.3s ease;
 }
 
-/* 3. Ô danh mục lưới tròn (Category Cells) */
+
 .categoryCell:hover {
-  transform: scale(1.05); /* Phóng to nhẹ toàn ô */
-  background-color: #FFF2F3 !important; /* Đổi nền sang hồng cam nhạt */
+  transform: scale(1.05); 
+  background-color: #FFF2F3 !important; 
   box-shadow: 0 6px 15px rgba(241, 77, 92, 0.1);
 }
 
 .categoryCell:hover .categoryAvatar {
-  transform: rotate(5deg) scale(1.1); /* Icon xoay nhẹ tinh tế */
+  transform: rotate(5deg) scale(1.1); 
   background-color: #F14D5C !important;
   color: #ffffff !important;
 }
@@ -69,19 +63,15 @@ button:active {
   transition: all 0.25s ease !important;
 }
 
-/* 4. Thẻ tag thể loại ở Hero Section phong cách Parallel */
+
 .heroTag:hover {
   color: #0a0f1d !important;
-  background-color: #dafd18 !important; /* Đổi nền thành màu neon sáng */
+  background-color: #dafd18 !important; 
   border-color: #dafd18 !important;
   transform: translateY(-2px);
 }
 
-/* ==========================================================================
-   CÁC HIỆU ỨNG KHỞI TẠO ĐỘNG (ANIMATIONS) KHI VÀO TRANG
-   ========================================================================== */
 
-/* Hiệu ứng nạp trang xuất hiện từ từ và bay lên */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -93,12 +83,12 @@ button:active {
   }
 }
 
-/* Áp dụng hiệu ứng xuất hiện cho các khối danh sách chính */
+
 .mainContentLayout, .heroContent, .formSection, .summarySection {
   animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Tinh chỉnh thanh cuộn trình duyệt (Scrollbar) cho đẹp và tiệp màu */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
