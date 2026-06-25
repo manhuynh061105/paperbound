@@ -22,12 +22,10 @@ const Order = {
     }
   },
 
-  // 💡 BỔ SUNG: Hàm dọn sạch giỏ hàng nằm trong luồng Transaction luôn
   clearCart: async (client, userId) => {
     await client.query('DELETE FROM carts WHERE user_id = $1', [userId]);
   },
 
-  // 🌟 🌟 🌟 BỔ SUNG MỚI: Hàm lấy lịch sử đơn hàng kèm thông tin Hóa đơn & Sản phẩm chi tiết
   getByUserId: async (userId) => {
     const query = `
       SELECT 

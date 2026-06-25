@@ -1,7 +1,6 @@
 const Product = require('../models/Product');
 const pool = require('../config/db');
 
-// 1. LẤY TOÀN BỘ DANH SÁCH SẢN PHẨM (ĐÃ BAO GỒM ĐA DANH MỤC)
 const getAllProducts = async (req, res) => {
   try {
     const products = await Product.findAll();
@@ -27,7 +26,6 @@ const getAllProducts = async (req, res) => {
   }
 };
 
-// 2. LẤY CHI TIẾT MỘT CUỐN SÁCH THEO ID
 const getProductById = async (req, res) => {
   try {
     const data = await Product.findById(req.params.id);
@@ -40,7 +38,6 @@ const getProductById = async (req, res) => {
   }
 };
 
-// 3. TIẾP NHẬN YÊU CẦU THÊM SÁCH MỚI TỪ ADMIN (HỖ TRỢ MẢNG DANH MỤC)
 const createProduct = async (req, res) => {
   try {
     const { 
@@ -87,7 +84,6 @@ const createProduct = async (req, res) => {
   }
 };
 
-// 4. LẤY SẢN PHẨM LIÊN QUAN
 const getRelatedProducts = async (req, res) => {
   const { id } = req.params;
   try {
@@ -99,7 +95,6 @@ const getRelatedProducts = async (req, res) => {
   }
 };
 
-// 5. CẬP NHẬT SẢN PHẨM (ADMIN) - ĐÃ ĐỒNG BỘ THAM SỐ SQL & BẢNG TRUNG GIAN
 const updateProduct = async (req, res) => {
   const { id } = req.params;
   const { title, author, price, description, stock_quantity, cover_image, category_id, category_ids } = req.body;
@@ -110,7 +105,6 @@ const updateProduct = async (req, res) => {
       return res.status(400).json({ success: false, message: "ID sản phẩm không hợp lệ." });
     }
 
-    // Câu lệnh SQL chỉ chứa 7 tham số ($1 -> $7) tương ứng với các cột có thật trong bảng products
     const sql = `
       UPDATE products 
       SET title = $1, author = $2, price = $3, description = $4, 
@@ -119,7 +113,6 @@ const updateProduct = async (req, res) => {
       RETURNING *
     `;
     
-    // Đã loại bỏ phần tử thừa, mảng values bây giờ có đúng 7 phần tử khớp hoàn toàn với câu lệnh SQL
     const values = [title, author, price, description, stock_quantity, cover_image, productId];
     const result = await pool.query(sql, values);
 
@@ -127,15 +120,11 @@ const updateProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm để cập nhật." });
     }
 
-    // --- XỬ LÝ ĐỒNG BỘ DANH MỤC SẢN PHẨM SANG BẢNG TRUNG GIAN ---
-    // Hỗ trợ cả trường hợp FE truyền mảng category_ids hoặc chỉ truyền một số category_id lẻ
     const finalCategoryIds = category_ids || (category_id ? [category_id] : []);
     
     if (finalCategoryIds.length > 0) {
-      // BƯỚC A: Xóa toàn bộ liên kết thể loại cũ của cuốn sách này
       await pool.query('DELETE FROM product_categories WHERE product_id = $1', [productId]);
       
-      // BƯỚC B: Chèn lại danh sách thể loại mới vào bảng trung gian
       for (const catId of finalCategoryIds) {
         if (catId) {
           await pool.query(
@@ -157,7 +146,6 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// 6. XÓA SẢN PHẨM (ADMIN)
 const deleteProduct = async (req, res) => {
   const { id } = req.params;
 
@@ -167,7 +155,6 @@ const deleteProduct = async (req, res) => {
       return res.status(400).json({ success: false, message: "ID sản phẩm không hợp lệ." });
     }
 
-    // Trước khi xóa sản phẩm, cần xóa liên kết của nó trong bảng trung gian để tránh dính khóa ngoại
     await pool.query('DELETE FROM product_categories WHERE product_id = $1', [productId]);
 
     const sql = `DELETE FROM products WHERE id = $1 RETURNING id`;
@@ -195,8 +182,6 @@ const deleteProduct = async (req, res) => {
 
 const getDashboardStats = async (req, res) => {
   try {
-    // 1. Tính tổng doanh thu: 
-    // Mẹo: Đổi thành ILIKE hoặc thêm các trạng thái thực tế trong DB của bạn (ví dụ: 'Đã thanh toán', 'Thành công', 'completed')
     const totalRevenueQuery = `
       SELECT SUM(total_amount) as total 
       FROM orders 
@@ -205,13 +190,10 @@ const getDashboardStats = async (req, res) => {
          OR status ILIKE '%thanh%'
     `;
     
-    // 2. Tính tổng số lượng đầu sách
     const totalProductsQuery = `SELECT COUNT(*) as total FROM products`;
     
-    // 3. Tính tổng số lượng đơn hàng (Đếm toàn bộ đơn hàng trong hệ thống)
     const totalOrdersQuery = `SELECT COUNT(*) as total FROM orders`;
 
-    // 4. Lấy dữ liệu doanh thu theo tháng cho biểu đồ
     const revenueChartQuery = `
       SELECT 
         TO_CHAR(created_at, 'MM/YYYY') as month_year,
@@ -226,7 +208,6 @@ const getDashboardStats = async (req, res) => {
       ORDER BY DATE_TRUNC('month', created_at) ASC
     `;
 
-    // Thực thi song song
     const [revRes, prodRes, orderRes, chartRes] = await Promise.all([
       pool.query(totalRevenueQuery),
       pool.query(totalProductsQuery),
@@ -234,7 +215,6 @@ const getDashboardStats = async (req, res) => {
       pool.query(revenueChartQuery)
     ]);
 
-    // Trả dữ liệu về cho Frontend
     res.status(200).json({
       success: true,
       data: {
@@ -253,7 +233,6 @@ const getDashboardStats = async (req, res) => {
 };
 
 
-// 💥 ĐỒNG BỘ EXPORT: Xuất tất cả các hàm thông qua object duy nhất
 module.exports = { 
   getAllProducts, 
   getProductById, 

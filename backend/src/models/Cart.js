@@ -1,8 +1,6 @@
 const pool = require('../config/db');
 
 const Cart = {
-  // Lấy toàn bộ giỏ hàng của 1 user (kèm thông tin Product)
-  // Lấy toàn bộ giỏ hàng của 1 user (kèm thông tin Product)
   findByUserId: async (userId) => {
     const query = `
       SELECT 
@@ -24,7 +22,6 @@ const Cart = {
     return result.rows;
   },
 
-  // Thêm hoặc Cập nhật (nếu sản phẩm đã có trong giỏ thì cộng dồn)
   addToCart: async (userId, productId, quantity) => {
     const query = `
       INSERT INTO carts (user_id, product_id, quantity)
@@ -48,12 +45,10 @@ const Cart = {
     return result.rows[0];
   },
 
-  // Xóa 1 sản phẩm khỏi giỏ
   removeItem: async (userId, productId) => {
     await pool.query('DELETE FROM carts WHERE user_id = $1 AND product_id = $2', [userId, productId]);
   },
 
-  // Xóa sạch giỏ hàng (thường dùng sau khi thanh toán thành công)
   clearCart: async (userId) => {
     await pool.query('DELETE FROM carts WHERE user_id = $1', [userId]);
   }

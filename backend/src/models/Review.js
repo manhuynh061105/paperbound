@@ -2,7 +2,6 @@ const db = require('../config/db');
 
 const Review = {
   create: async (reviewData) => {
-    // 💡 Thêm biến review_image nhận từ controller
     const { user_id, product_id, rating, comment, review_image } = reviewData;
     
     const sql = `
@@ -11,7 +10,6 @@ const Review = {
       RETURNING *;
     `;
     
-    // Truyền đủ 5 tham số vào mảng tương ứng
     const result = await db.query(sql, [user_id, product_id, rating, comment, review_image]);
     return result.rows[0];
   }

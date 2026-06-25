@@ -9,7 +9,6 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
-  // 🔥 TỰ ĐỘNG BẬT SSL KHI DEPLOY (Không cần sửa code khi lên server)
   ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 

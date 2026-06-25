@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-// Thống nhất chuỗi fallback mặc định nếu trên Render chưa kịp cấu hình biến
 const JWT_SECRET = process.env.JWT_SECRET || 'PAPERBOUND_SUPER_SECRET_KEY_2026';
 
 const verifyToken = (req, res, next) => {
@@ -12,7 +11,7 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // Lưu thông tin giải mã (id, role) vào req
+    req.user = decoded; 
     next(); 
   } catch (error) {
     return res.status(403).json({ success: false, message: "⚠️ Token đã hết hạn hoặc không hợp lệ!" });

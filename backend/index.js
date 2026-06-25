@@ -1,13 +1,10 @@
-// =========================================================
-// KHỞI TẠO BIẾN MÔI TRƯỜNG (PHẢI ĐẶT Ở DÒNG SỐ 1)
-// =========================================================
-require('dotenv').config(); // Giúp nạp API_KEY từ .env trước khi các controller dịch mã
+
+require('dotenv').config(); 
 
 const express = require('express');
 const cors = require('cors');
 const logger = require('./src/middleware/loggerMiddleware');
 
-// Import các Tuyến đường API (Routes)
 const productRoutes = require('./src/routes/productRoutes');
 const orderRoutes = require('./src/routes/orderRoutes'); 
 const cartRoutes = require('./src/routes/cartRoutes');
@@ -18,11 +15,6 @@ const reviewRoutes = require('./src/routes/reviewRoutes');
 
 const app = express();
 
-// =========================================================
-// MIDDLEWARE CONFIGURATION (CẤU HÌNH HỆ THỐNG)
-// =========================================================
-
-// 🟢 Cấu hình CORS mở rộng - Cho phép tất cả các nguồn gọi API & tự xử lý OPTIONS preflight
 app.use(cors({
   origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -31,16 +23,11 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-// Giới hạn xử lý chuỗi dữ liệu lớn (Base64) - CHỈ CẦN KHAI BÁO 1 LẦN
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Ghi nhận log truy cập hệ thống
 app.use(logger);
 
-// =========================================================
-// DEFINING API ROUTES (ĐỊNH NGHĨA TUYẾN ĐƯỜNG)
-// =========================================================
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes); 
 app.use('/api/cart', cartRoutes);
@@ -49,14 +36,11 @@ app.use('/api/ai', aiChatRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/reviews', reviewRoutes);
 
-// API Gốc để test kết nối server nhanh
 app.get('/', (req, res) => {
   res.json({ message: "Welcome to Paperbound API" });
 });
 
-// =========================================================
-// START SERVER (KHỞI CHẠY)
-// =========================================================
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server Paperbound đang chạy mượt mà tại port: ${PORT}`);

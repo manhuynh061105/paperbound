@@ -2,7 +2,7 @@ const Cart = require('../models/Cart');
 
 const getCart = async (req, res) => {
   try {
-    const { userId } = req.params; // Sau này sẽ lấy từ Token
+    const { userId } = req.params; 
     const items = await Cart.findByUserId(userId);
     res.status(200).json({ success: true, data: items });
   } catch (error) {
@@ -10,12 +10,10 @@ const getCart = async (req, res) => {
   }
 };
 
-// Sửa lại hàm addItem trong cartController.js của hai bạn:
 const addItem = async (req, res) => {
   try {
     const { userId, productId, quantity } = req.body;
 
-    // 💡 BẢO VỆ DB: Kiểm tra và ép kiểu số rõ ràng
     const cleanUserId = typeof userId === 'object' && userId !== null ? userId.id : Number(userId);
     const cleanProductId = typeof productId === 'object' && productId !== null ? productId.id : Number(productId);
     const cleanQuantity = Number(quantity) || 1;
@@ -58,5 +56,4 @@ const updateQuantity = async (req, res) => {
   }
 };
 
-// Nhớ export thêm updateQuantity ở cuối file nhé!
 module.exports = { getCart, addItem, deleteItem, updateQuantity };

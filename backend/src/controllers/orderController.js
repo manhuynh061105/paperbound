@@ -7,14 +7,12 @@ const checkout = async (req, res) => {
   try {
     const { userId, items, shippingAddress, paymentMethod, needInvoice, billingInfo, totalAmountFromFE, taxAmountFromFE } = req.body;
     
-    // Kiểm tra dữ liệu đầu vào tối thiểu để tránh lỗi crash nửa chừng
     if (!userId || !items || items.length === 0) {
       return res.status(400).json({ success: false, message: "Dữ liệu giỏ hàng hoặc User trống, không thể checkout!" });
     }
 
     await client.query('BEGIN');
 
-    // 1. Ép kiểu dữ liệu an toàn để tính toán số tiền
     let subtotal = items.reduce((acc, item) => {
       const price = Number(item.price || item.priceAtPurchase || 0);
       const qty = Number(item.quantity || 0);
@@ -24,7 +22,6 @@ const checkout = async (req, res) => {
     const taxAmount = taxAmountFromFE !== undefined ? Number(taxAmountFromFE) : (subtotal * 0.05);
     const totalAmount = totalAmountFromFE !== undefined ? Number(totalAmountFromFE) : (subtotal + taxAmount + 30000);
 
-    // 2. TẠO ĐƠN HÀNG GỐC TRƯỚC ĐỂ LẤY ORDER ID (Sửa dứt điểm lỗi orderId/order is not defined)
     const orderId = await Order.create(client, {
       userId: Number(userId),
       totalAmount,
@@ -33,16 +30,13 @@ const checkout = async (req, res) => {
       paymentMethod: paymentMethod || 'COD'
     }); 
 
-    // 3. LƯU CHI TIẾT CÁC SẢN PHẨM VÀO ĐƠN HÀNG
     await Order.createDetails(client, orderId, items);
 
-    // 4. NẾU KHÁCH CẦN HÓA ĐƠN ĐỎ -> GỌI MODEL INVOICE
     if (needInvoice && billingInfo) {
       const extra = billingInfo.extraMetadata || {};
       
       let customBillingName = billingInfo.billingName;
       
-      // Gộp thông tin chi tiết kiểu Fahasa thành chuỗi text dài lưu vào trường billing_name
       if (extra.invoiceType === 'company') {
         customBillingName = `[DN] ${extra.companyName} - ĐC: ${extra.companyAddress} - Người mua: ${extra.buyerName || 'Trống'} - QHNS: ${extra.qhnsCode || 'Không'}`;
       } else {
@@ -65,12 +59,10 @@ const checkout = async (req, res) => {
         totalFinal: totalAmountFromFE
       });
     }
-    // 5. ĐẶT HÀNG THÀNH CÔNG -> DỌN SẠCH GIỎ HÀNG CỦA USER
     await Order.clearCart(client, Number(userId));
 
     await client.query('COMMIT');
     
-    // Trả về kết quả thành công thực sự cho Front-End nhận biết
     return res.status(201).json({ 
       success: true, 
       orderId, 
@@ -80,7 +72,6 @@ const checkout = async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     
-    // In lỗi chi tiết tại Terminal để dễ debug
     console.error("❌ LỖI TRANSACTION CHECKOUT TẠI BACKEND:", err);
     
     return res.status(500).json({ 
@@ -97,7 +88,6 @@ const getOrdersByUserId = async (req, res) => {
   const { userId } = req.params;
   
   try {
-    // 1. LẤY DANH SÁCH ĐƠN HÀNG GỐC CỦA USER KÈM DỮ LIỆU HÓA ĐƠN ĐỎ (ĐÃ THAY ĐỔI TẠI ĐÂY)
     const ordersQuery = `
       SELECT 
         o.id, 
@@ -127,13 +117,11 @@ const getOrdersByUserId = async (req, res) => {
       return res.json({ success: true, data: [] });
     }
 
-    // 2. LẤY CHI TIẾT SẢN PHẨM CỦA TỪNG ĐƠN HÀNG
     const data = [];
     
     for (let order of orders) {
       let products = [];
       try {
-        // Giữ nguyên vẹn logic check review dựa trên mốc thời gian của bạn
         const itemsQuery = `
           SELECT p.id, p.title, p.cover_image, od.price_at_purchase as price, od.quantity,
                  EXISTS (
@@ -172,7 +160,6 @@ const getOrdersByUserId = async (req, res) => {
         }
       }
 
-      // Đóng gói mảng dữ liệu trả về bao gồm cả thông tin hóa đơn mới đính kèm
       data.push({
         id: order.id,
         user_id: order.user_id,
@@ -183,7 +170,6 @@ const getOrdersByUserId = async (req, res) => {
         shipping_address: order.shipping_address,
         created_at: order.created_at,
         
-        // 🌟 Bổ sung các trường này để đưa dữ liệu thật vào Modal xem hóa đơn ở Front-End
         has_invoice: order.has_invoice,
         invoice_code: order.invoice_code,
         tax_id: order.tax_id,
@@ -227,5 +213,4 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-// Đảm bảo xuất đầy đủ 3 hàm handler cho Router sử dụng
 module.exports = { checkout, getOrdersByUserId, updateOrderStatus };
