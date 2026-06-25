@@ -8,10 +8,27 @@ const HomePage = ({ refreshCartCount, productTrigger }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchKey, setSearchKey] = useState('');
+  const [backgroundElements, setBackgroundElements] = useState([]);
   const navigate = useNavigate();
 
   const savedUser = JSON.parse(localStorage.getItem('user'));
   const userId = savedUser ? savedUser.id : null;
+
+  useEffect(() => {
+    const elements = Array.from({ length: 25 }).map((_, i) => {
+      const isStar = Math.random() > 0.5;
+      return {
+        id: i,
+        type: isStar ? 'star' : 'dust',
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        size: isStar ? `${Math.random() * 3 + 2}px` : `${Math.random() * 6 + 4}px`,
+        delay: `${Math.random() * 6}s`,
+        duration: isStar ? `${Math.random() * 3 + 2}s` : `${Math.random() * 8 + 6}s`,
+      };
+    });
+    setBackgroundElements(elements);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -70,6 +87,29 @@ const HomePage = ({ refreshCartCount, productTrigger }) => {
       <style>{animationStyles}</style>
 
       <div style={styles.heroSection}>
+        
+        <div style={styles.animatedBgContainer}>
+          {backgroundElements.map((el) => (
+            <div
+              key={el.id}
+              style={{
+                position: 'absolute',
+                left: el.left,
+                top: el.top,
+                width: el.size,
+                height: el.size,
+                borderRadius: '50%',
+                backgroundColor: el.type === 'star' ? '#FFF' : 'rgba(230, 126, 34, 0.4)',
+                boxShadow: el.type === 'star' ? '0 0 10px #FFF' : '0 0 8px rgba(230, 126, 34, 0.6)',
+                animation: el.type === 'star' 
+                  ? `twinkle ${el.duration} infinite ease-in-out ${el.delay}`
+                  : `floatDown ${el.duration} infinite linear ${el.delay}`,
+                opacity: 0.7,
+              }}
+            />
+          ))}
+        </div>
+
         <div style={styles.heroContent}>
           <h1 style={styles.heroTitle}>
             Find your <span style={styles.heroTitleHighlight}>life's work.</span>
@@ -265,6 +305,7 @@ const HomePage = ({ refreshCartCount, productTrigger }) => {
   );
 };
 
+
 const animationStyles = `
   @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(30px); }
@@ -276,6 +317,26 @@ const animationStyles = `
     100% { border-color: rgba(230,126,34,0.4); box-shadow: 0 0 5px rgba(230,126,34,0.2); }
   }
   
+  /* 🌟 Hiệu ứng lấp lánh nhẹ nhàng cho Sao */
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* 🌟 Hiệu ứng bụi giấy rơi lãng mạn nhẹ nhàng từ trên xuống */
+  @keyframes floatDown {
+    0% {
+      transform: translateY(-20px) translateX(0) rotate(0deg);
+      opacity: 0;
+    }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.6; }
+    100% {
+      transform: translateY(360px) translateX(30px) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
   .hover-card-bounce {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
@@ -358,6 +419,18 @@ const styles = {
     animation: 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
     boxShadow: '0 20px 40px rgba(44,62,80,0.15)'
   },
+  
+  
+  animatedBgContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none', 
+    zIndex: 1
+  },
+
   heroContent: { flex: 1.2, zIndex: 2, maxWidth: '680px' },
   heroTitle: { fontSize: '52px', fontWeight: '800', color: '#ffffff', margin: '0 0 20px 0', letterSpacing: '-0.5px', lineHeight: '1.1' },
   heroTitleHighlight: { 
@@ -368,7 +441,7 @@ const styles = {
     display: 'inline-block',
     animation: 'pulseGlow 3s infinite ease-in-out'
   },
-  heroSubtitle: { fontSize: '16px', color: '#E2E8F0', lineHeight: '1.6.5', margin: '0 0 35px 0', opacity: 0.9 },
+  heroSubtitle: { fontSize: '16px', color: '#E2E8F0', lineHeight: '1.65', margin: '0 0 35px 0', opacity: 0.9 },
   
   searchForm: { display: 'flex', backgroundColor: '#ffffff', borderRadius: '30px', padding: '6px 8px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)', marginBottom: '24px' },
   heroSearchInput: { flex: 1, border: 'none', outline: 'none', padding: '12px 24px', fontSize: '15px', borderRadius: '30px', color: '#1E293B' },
@@ -382,7 +455,8 @@ const styles = {
     backgroundImage: 'url("https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=1000")', 
     backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '16px',
     display: 'flex', alignItems: 'flex-end', padding: '20px', boxSizing: 'border-box', marginLeft: '50px',
-    boxShadow: 'inset 0 0 100px rgba(0,0,0,0.3)'
+    boxShadow: 'inset 0 0 100px rgba(0,0,0,0.3)',
+    zIndex: 2 
   },
   heroImageBadge: { backgroundColor: '#ffffff', color: '#2C3E50', padding: '8px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '11px', letterSpacing: '1px' },
 

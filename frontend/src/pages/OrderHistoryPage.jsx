@@ -245,7 +245,6 @@ const OrderHistoryPage = () => {
                   </div>
                   
                   <div style={{ display: 'flex', gap: '12px' }}>
-                    {/* 🌟 NÚT XEM HÓA ĐƠN: Hiện khi đơn hàng yêu cầu xuất hóa đơn */}
                     {(order.has_invoice || order.invoice_requested) && (
                       <button 
                         className="invoice-btn-hover" 
@@ -275,7 +274,6 @@ const OrderHistoryPage = () => {
         </div>
       </div>
 
-      {/* MODAL XÁC NHẬN HỦY / NHẬN HÀNG */}
       {confirmModal.isOpen && (
         <div style={styles.modalOverlay}>
           <div style={{...styles.modalContent, maxWidth: '440px', textAlign: 'center'}}>
@@ -305,7 +303,6 @@ const OrderHistoryPage = () => {
         </div>
       )}
 
-      {/* MODAL ĐÁNH GIÁ SẢN PHẨM */}
       {isReviewModalOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
