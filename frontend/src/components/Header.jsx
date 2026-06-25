@@ -115,36 +115,40 @@ const Header = ({ cartCount, userRole, currentUser, openAdminModal, openCategory
           </button>
           
           {isCategoryHovered && structuredCategories.length > 0 && (
-            <div style={styles.dropdownMenu} className="smooth-dropdown">
-              {structuredCategories.map(cat => (
-                <div 
-                  key={cat.id} 
-                  style={styles.categoryItem} 
-                  className="hover-category-item" 
-                  onClick={() => handleCategoryClick(cat.id)}
-                >
-                  <span style={{ fontWeight: '500' }}>{cat.name}</span>
-                  {cat.sub && cat.sub.length > 0 && <span style={{ fontSize: '10px', color: '#94A3B8' }}>▶</span>}
-                  
-                  {cat.sub && cat.sub.length > 0 && (
-                    <div style={styles.subCategoryMenu} className="smooth-dropdown">
-                      {cat.sub.map(subItem => (
-                        <div 
-                          key={subItem.id} 
-                          style={styles.subItem} 
-                          className="hover-sub-item" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCategoryClick(subItem.id);
-                          }}
-                        >
-                          {subItem.name}
+            <div style={styles.dropdownWrapper}>
+              <div style={styles.dropdownMenu} className="smooth-dropdown">
+                {structuredCategories.map(cat => (
+                  <div 
+                    key={cat.id} 
+                    style={styles.categoryItem} 
+                    className="hover-category-item" 
+                    onClick={() => handleCategoryClick(cat.id)}
+                  >
+                    <span style={{ fontWeight: '500' }}>{cat.name}</span>
+                    {cat.sub && cat.sub.length > 0 && <span style={{ fontSize: '10px', color: '#94A3B8' }}>▶</span>}
+                    
+                    {cat.sub && cat.sub.length > 0 && (
+                      <div style={styles.subCategoryWrapper}>
+                        <div style={styles.subCategoryMenu} className="smooth-dropdown">
+                          {cat.sub.map(subItem => (
+                            <div 
+                              key={subItem.id} 
+                              style={styles.subItem} 
+                              className="hover-sub-item" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCategoryClick(subItem.id);
+                              }}
+                            >
+                              {subItem.name}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -181,7 +185,7 @@ const Header = ({ cartCount, userRole, currentUser, openAdminModal, openCategory
           <button type="submit" style={styles.searchBtn}>🔍</button>
         </form>
 
-        {isSearchFocused && {suggestedProducts} && suggestedProducts.length > 0 && (
+        {isSearchFocused && suggestedProducts && suggestedProducts.length > 0 && (
           <div style={styles.searchSuggestionsDropdown} className="smooth-dropdown">
             {suggestedProducts.map(product => (
               <div 
@@ -222,19 +226,21 @@ const Header = ({ cartCount, userRole, currentUser, openAdminModal, openCategory
               ⚙️ Quản lý <span style={styles.arrowIcon}>▾</span>
             </button>
             {isAdminHovered && (
-              <div style={{ ...styles.dropdownMenu, right: 0, left: 'auto', width: '220px' }} className="smooth-dropdown">
-                <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { openAdminModal(); setIsAdminHovered(false); }}>
-                  ➕ Thêm sản phẩm mới
-                </div>
-                <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { openCategoryModal(); setIsAdminHovered(false); }}>
-                  📁 Thêm danh mục mới
-                </div>
-                <hr style={styles.divider} />
-                <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { navigate('/admin/dashboard'); setIsAdminHovered(false); }}>
-                  📊 Xem Dashboard
-                </div>
-                <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { navigate('/admin/products'); setIsAdminHovered(false); }}>
-                  📚 Quản lý sản phẩm
+              <div style={styles.dropdownWrapperAdmin}>
+                <div style={styles.dropdownMenuAdmin} className="smooth-dropdown">
+                  <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { openAdminModal(); setIsAdminHovered(false); }}>
+                    ➕ Thêm sản phẩm mới
+                  </div>
+                  <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { openCategoryModal(); setIsAdminHovered(false); }}>
+                    📁 Thêm danh mục mới
+                  </div>
+                  <hr style={styles.divider} />
+                  <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { navigate('/admin/dashboard'); setIsAdminHovered(false); }}>
+                    📊 Xem Dashboard
+                  </div>
+                  <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { navigate('/admin/products'); setIsAdminHovered(false); }}>
+                    📚 Quản lý sản phẩm
+                  </div>
                 </div>
               </div>
             )}
@@ -259,11 +265,13 @@ const Header = ({ cartCount, userRole, currentUser, openAdminModal, openCategory
               <span style={styles.userNameText}>{currentUser.name || 'User'} <span style={styles.arrowIcon}>▾</span></span>
             </div>
             {isUserHovered && (
-              <div style={{ ...styles.dropdownMenu, right: 0, left: 'auto', width: '190px' }} className="smooth-dropdown">
-                <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { navigate('/profile'); setIsUserHovered(false); }}>📂 Hồ sơ cá nhân</div>
-                <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { navigate('/orders-history'); setIsUserHovered(false); }}>📜 Lịch sử đơn hàng</div>
-                <hr style={styles.divider} />
-                <div style={{ ...styles.dropdownItem, color: '#E74C3C' }} className="hover-logout-item" onClick={() => { onLogout(); setIsUserHovered(false); }}>🚪 Đăng xuất</div>
+              <div style={styles.dropdownWrapperUser}>
+                <div style={styles.dropdownMenuUser} className="smooth-dropdown">
+                  <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { navigate('/profile'); setIsUserHovered(false); }}>📂 Hồ sơ cá nhân</div>
+                  <div style={styles.dropdownItem} className="hover-sub-item" onClick={() => { navigate('/orders-history'); setIsUserHovered(false); }}>📜 Lịch sử đơn hàng</div>
+                  <hr style={styles.divider} />
+                  <div style={{ ...styles.dropdownItem, color: '#E74C3C' }} className="hover-logout-item" onClick={() => { onLogout(); setIsUserHovered(false); }}>🚪 Đăng xuất</div>
+                </div>
               </div>
             )}
           </div>
@@ -282,7 +290,7 @@ const dropdownAnimationCSS = `
     animation: slideInUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .hover-category-item:hover { background-color: #F8FAFC !important; color: #E67E22 !important; }
-  .hover-category-item:hover > div { display: block !important; }
+  .hover-category-item:hover > div { display:block !important; }
   .hover-sub-item:hover { background-color: #F8FAFC !important; color: #E67E22 !important; }
   .hover-logout-item:hover { background-color: #FEF2F2 !important; }
   .cart-bounce:hover { transform: scale(1.1); transition: transform 0.2s ease; }
@@ -293,12 +301,14 @@ const styles = {
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#ffffff', padding: '14px 6%', boxShadow: '0 1px 10px rgba(0,0,0,0.04)', position: 'sticky', top: 0, zIndex: 100, borderBottom: '1px solid #F1F5F9', fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif', boxSizing: 'border-box' },
   logoSection: { cursor: 'pointer' },
   logoText: { margin: 0, fontSize: '22px', fontWeight: '800', color: '#2C3E50', letterSpacing: '0.8px' },
-  menuContainer: { position: 'relative', padding: '6px 0' },
+  menuContainer: { position: 'relative', padding: '10px 0' },
   categoryTriggerBtn: { border: '1px solid #E2E8F0', padding: '9px 18px', borderRadius: '24px', cursor: 'pointer', fontWeight: '600', fontSize: '13.5px', transition: 'all 0.15s ease-in-out', display: 'flex', alignItems: 'center', gap: '4px', outline: 'none' },
   arrowIcon: { fontSize: '11px', opacity: 0.7 },
-  dropdownMenu: { position: 'absolute', top: '100%', left: 0, backgroundColor: '#ffffff', width: '240px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', borderRadius: '12px', padding: '6px 0', zIndex: 200, border: '1px solid #E2E8F0', marginTop: '4px' },
+  dropdownWrapper: { position: 'absolute', top: '100%', left: 0, width: '240px', paddingTop: '4px', zIndex: 200 },
+  dropdownMenu: { backgroundColor: '#ffffff', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', borderRadius: '12px', padding: '6px 0', border: '1px solid #E2E8F0' },
   categoryItem: { position: 'relative', padding: '11px 18px', cursor: 'pointer', color: '#334155', fontSize: '13.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.15s' },
-  subCategoryMenu: { display: 'none', position: 'absolute', top: '-7px', left: '100%', backgroundColor: '#ffffff', width: '200px', boxShadow: '10px 10px 30px rgba(0,0,0,0.08)', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '6px 0', marginLeft: '2px' },
+  subCategoryWrapper: { display: 'none', position: 'absolute', top: '-7px', left: '100%', width: '200px', paddingLeft: '6px' },
+  subCategoryMenu: { backgroundColor: '#ffffff', boxShadow: '10px 10px 30px rgba(0,0,0,0.08)', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '6px 0' },
   subItem: { padding: '10px 18px', color: '#475569', fontSize: '13.5px', transition: 'all 0.15s' },
   searchWrapper: { position: 'relative', flex: 1, margin: '0 30px', maxWidth: '420px' },
   searchBarContainer: { display: 'flex', border: '1px solid #E2E8F0', borderRadius: '24px', overflow: 'hidden', backgroundColor: '#F8FAFC', transition: 'all 0.2s ease-in-out' },
@@ -313,6 +323,8 @@ const styles = {
   suggestionPrice: { fontSize: '12.5px', fontWeight: '700', color: '#E67E22' },
   navActions: { display: 'flex', alignItems: 'center', gap: '24px' },
   adminBtn: { border: '1px solid #2C3E50', padding: '8px 18px', borderRadius: '24px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.15s ease-in-out', outline: 'none', display: 'flex', alignItems: 'center', gap: '4px' },
+  dropdownWrapperAdmin: { position: 'absolute', top: '100%', right: 0, width: '220px', paddingTop: '4px', zIndex: 200 },
+  dropdownMenuAdmin: { backgroundColor: '#ffffff', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', borderRadius: '12px', padding: '6px 0', border: '1px solid #E2E8F0' },
   cartIconWrapper: { position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' },
   cartIconSpan: { fontSize: '22px', color: '#2C3E50' },
   cartBadge: { position: 'absolute', top: '-2px', right: '-4px', backgroundColor: '#E67E22', color: 'white', borderRadius: '10px', padding: '1px 6px', fontSize: '10px', fontWeight: '700' },
@@ -321,6 +333,8 @@ const styles = {
   avatarImg: { width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #E2E8F0' },
   googleAvatar: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#2C3E50', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '13px' },
   userNameText: { fontSize: '13.5px', fontWeight: '600', color: '#2C3E50', display: 'flex', alignItems: 'center', gap: '4px' },
+  dropdownWrapperUser: { position: 'absolute', top: '100%', right: 0, width: '190px', paddingTop: '4px', zIndex: 200 },
+  dropdownMenuUser: { backgroundColor: '#ffffff', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', borderRadius: '12px', padding: '6px 0', border: '1px solid #E2E8F0' },
   dropdownItem: { padding: '11px 18px', fontSize: '13.5px', color: '#334155', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' },
   divider: { border: 'none', borderTop: '1px solid #F1F5F9', margin: '4px 0' }
 };
