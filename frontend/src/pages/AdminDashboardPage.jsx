@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { productService } from '../services/api';
 import { toast } from 'react-toastify';
-// 1. Import trực tiếp component AddProductModal vào đây
-import AddProductModal from './AddProductModal'; 
+import AddProductModal from '../components/AddProductModal';
 
 const AdminDashboardPage = () => {
   const [stats, setStats] = useState({
